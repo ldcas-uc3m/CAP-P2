@@ -4,7 +4,7 @@
 
 set -e  # exit on error
 
-OUTFILE=../outfile.zip
+OUTFILE=../cap-p2.zip
 [ -e $OUTFILE ] && rm $OUTFILE  # remove if exists already
 
 
@@ -15,15 +15,9 @@ latexmk -cd -shell-escape -silent -pdf report/report.tex
 cp report/report.pdf .
 
 
-cd src
-
-# <clean stuff up>
-
-cd ..
-
 # zip it (excluding useless stuff)
 echo "Zipping..."
-zip -r $OUTFILE . -x zip.sh report/\* \*.git\* img/\* *__pycache__/\* .venv/\* build/\* .vscode/\*
+zip -r $OUTFILE . -x zip.sh report/\* \*.git\* img/\* *__pycache__/\* .venv/\* build/\* .vscode/\* LICENSE
 
 # cleanup
 echo "Cleaning up..."
