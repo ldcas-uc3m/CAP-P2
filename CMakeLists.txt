@@ -17,9 +17,34 @@ endif()
 
 include_directories(SYSTEM ${MPI_INCLUDE_PATH})
 
-add_executable(contrast src/contrast-enhancement.cpp src/histogram-equalization.cpp src/contrast.cpp)
-add_executable(contrast-omp src/contrast-enhancement-omp.cpp src/histogram-equalization.cpp src/contrast.cpp)
-add_executable(contrast-mpi src/contrast-enhancement-mpi.cpp src/histogram-equalization.cpp src/contrast.cpp)
-add_executable(contrast-mpi-omp src/contrast-enhancement-mpi-omp.cpp src/histogram-equalization.cpp src/contrast.cpp)
+# TODO: move each one to its own folder... while still leaving the executables in the same directory...
+
+add_executable(
+  contrast
+  src/serial/contrast-enhancement.cpp
+  src/serial/histogram-equalization.cpp
+  src/serial/contrast.cpp
+)
+add_executable(
+  contrast-mpi-omp
+  src/mpi-omp/contrast-enhancement.cpp
+  src/mpi-omp/histogram-equalization.cpp
+  src/mpi-omp/contrast.cpp
+)
+add_executable(
+  contrast-mpi
+  src/mpi/contrast-enhancement.cpp
+  src/mpi/histogram-equalization.cpp
+  src/mpi/contrast.cpp
+)
+add_executable(
+  contrast-omp
+  src/omp/contrast-enhancement.cpp
+  src/omp/histogram-equalization.cpp
+  src/omp/contrast.cpp
+)
 
 target_link_libraries(contrast ${MPI_C_LIBRARIES})
+target_link_libraries(contrast-omp ${MPI_C_LIBRARIES})
+target_link_libraries(contrast-mpi ${MPI_C_LIBRARIES})
+target_link_libraries(contrast-mpi-omp ${MPI_C_LIBRARIES})

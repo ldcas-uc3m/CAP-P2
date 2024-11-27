@@ -76,3 +76,41 @@ cmake .. -DCMAKE_CXX_COMPILER=mpicxx.mpich
 make
 ```
 
+Esto generará cuatro ejecutables (en `build/`): `contrast`, `contrast-mpi`, `contrast-omp` y `contrast-mpi-omp`, las cuales corresponden con las cuatro implementaciones.
+
+
+## Ejecución
+Es necesario
+
+
+Para ejecutar:
+```
+srun -p gpus -N <nodos> -n <cores> <ejecutable>
+```
+
+
+
+
+> [!NOTE]
+> El máximo de nodos en `avignon` es de 4, y un máximo de 12 cores por nodo.
+
+> [!TIP]
+> También puedes ejecutarlo en batch, para lo que es necesario un archivo `run.sh`:
+> ```
+> #!/bin/bash
+>
+> #SBATCH --job-name=contrast-<version>
+> #SBATCH --output=contrast-<version>_%j.log
+> #SBATCH --time=00:00:30  # max duration
+> #SBATCH --ntasks=<cores>
+> #SBATCH --nodes=<nodos>
+> #SBATCH --cpus-per-task=1  # cpus per task/cores
+> #SBATCH --partition=gpus
+> 
+> srun --mpi=pmix <ejecutable>
+> ```
+>
+> Y después se ejecuta con:
+> ```
+> sbatch run.sh
+> ```
