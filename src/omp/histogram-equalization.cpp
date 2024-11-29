@@ -47,8 +47,7 @@ void histogram(int * hist_out, unsigned char * img_in, int img_size, int nbr_bin
 void histogram_equalization(unsigned char * img_out, unsigned char * img_in,
                             int * hist_in, int img_size, int nbr_bin){
     int *lut = (int *)malloc(sizeof(int)*nbr_bin);
-    int *thread_cdf;
-    int i, cdf, min, d, threads_number, thread_id, cdf_local, cdf_correction;
+    int i, cdf, min, d;
     /* Construct the LUT by calculating the CDF */
     cdf = 0;
     min = 0;
@@ -79,7 +78,6 @@ void histogram_equalization(unsigned char * img_out, unsigned char * img_in,
         }
     }
     
-
 
     /* Get the result image */
     omp_set_dynamic(true);

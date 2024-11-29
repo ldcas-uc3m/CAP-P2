@@ -103,16 +103,20 @@ HSL_IMG rgb2hsl(PPM_IMG img_in)
     img_out.s = (float *)malloc(img_in.w * img_in.h * sizeof(float));
     img_out.l = (unsigned char *)malloc(img_in.w * img_in.h * sizeof(unsigned char));
 
+    
+    float var_r, var_g, var_b, var_min, var_max, del_max;
+    omp_set_dynamic(true);
+    #pragma omp parallel for private(var_r, var_g, var_b, var_max, var_min, del_max, H, L, S)
     for(i = 0; i < img_in.w*img_in.h; i ++){
 
-        float var_r = ( (float)img_in.img_r[i]/255 );//Convert RGB to [0,1]
-        float var_g = ( (float)img_in.img_g[i]/255 );
-        float var_b = ( (float)img_in.img_b[i]/255 );
-        float var_min = (var_r < var_g) ? var_r : var_g;
+        var_r = ( (float)img_in.img_r[i]/255 );//Convert RGB to [0,1]
+        var_g = ( (float)img_in.img_g[i]/255 );
+        var_b = ( (float)img_in.img_b[i]/255 );
+        var_min = (var_r < var_g) ? var_r : var_g;
         var_min = (var_min < var_b) ? var_min : var_b;   //min. value of RGB
-        float var_max = (var_r > var_g) ? var_r : var_g;
+        var_max = (var_r > var_g) ? var_r : var_g;
         var_max = (var_max > var_b) ? var_max : var_b;   //max. value of RGB
-        float del_max = var_max - var_min;               //Delta RGB value
+        del_max = var_max - var_min;               //Delta RGB value
 
         L = ( var_max + var_min ) / 2;
         if ( del_max == 0 )//This is a gray, no chroma...
@@ -180,6 +184,9 @@ PPM_IMG hsl2rgb(HSL_IMG img_in)
     result.img_g = (unsigned char *)malloc(result.w * result.h * sizeof(unsigned char));
     result.img_b = (unsigned char *)malloc(result.w * result.h * sizeof(unsigned char));
 
+    
+    omp_set_dynamic(true);
+    #pragma omp parallel for simd
     for(i = 0; i < img_in.width*img_in.height; i ++){
         float H = img_in.h[i];
         float S = img_in.s[i];
@@ -229,6 +236,9 @@ YUV_IMG rgb2yuv(PPM_IMG img_in)
     img_out.img_u = (unsigned char *)malloc(sizeof(unsigned char)*img_out.w*img_out.h);
     img_out.img_v = (unsigned char *)malloc(sizeof(unsigned char)*img_out.w*img_out.h);
 
+    
+    omp_set_dynamic(true);
+    #pragma omp parallel for simd
     for(i = 0; i < img_out.w*img_out.h; i ++){
         r = img_in.img_r[i];
         g = img_in.img_g[i];
@@ -271,6 +281,9 @@ PPM_IMG yuv2rgb(YUV_IMG img_in)
     img_out.img_g = (unsigned char *)malloc(sizeof(unsigned char)*img_out.w*img_out.h);
     img_out.img_b = (unsigned char *)malloc(sizeof(unsigned char)*img_out.w*img_out.h);
 
+    
+    omp_set_dynamic(true);
+    #pragma omp parallel for simd
     for(i = 0; i < img_out.w*img_out.h; i ++){
         y  = (int)img_in.img_y[i];
         cb = (int)img_in.img_u[i] - 128;
