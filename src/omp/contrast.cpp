@@ -70,7 +70,7 @@ PPM_IMG read_ppm(const char * path){
 
     char *ibuf;
     PPM_IMG result;
-    int v_max, i;
+    int v_max, i, mult;
     in_file = fopen(path, "r");
     if (in_file == NULL){
         printf("Input file not found!\n");
@@ -95,38 +95,13 @@ PPM_IMG read_ppm(const char * path){
 
     fread(ibuf,sizeof(unsigned char), 3 * result.w*result.h, in_file);
 
-    /*for(i = 0; i < result.w*result.h; i ++){
+    /*Esta correcto*/
+    omp_set_dynamic(true);
+    #pragma omp parallel for simd
+    for(i = 0; i < result.w*result.h; i ++){
         result.img_r[i] = ibuf[3*i + 0];
         result.img_g[i] = ibuf[3*i + 1];
         result.img_b[i] = ibuf[3*i + 2];
-    }*/
-    
-    #pragma omp parallel
-    {
-        #pragma omp sections
-        {
-            #pragma omp section
-            {
-                /*Seccion 1*/
-                for( i = 0; i < result.w*result.h; i ++){
-                    result.img_r[i] = ibuf[3*i + 0];
-                }
-            }
-            #pragma omp section
-            {
-                /*Seccion 2*/
-                for( i = 0; i < result.w*result.h; i ++){
-                    result.img_g[i] = ibuf[3*i + 1];
-                }
-            }
-            #pragma omp section
-            {
-                /*Seccion 3*/
-                for( i = 0; i < result.w*result.h; i ++){
-                    result.img_b[i] = ibuf[3*i + 2];
-                }
-            }
-        }
     }
 
     fclose(in_file);
@@ -137,41 +112,16 @@ PPM_IMG read_ppm(const char * path){
 
 void write_ppm(PPM_IMG img, const char * path){
     FILE * out_file;
-    int i;
+    int i, mult;
     char * obuf = (char *)malloc(3 * img.w * img.h * sizeof(char));
 
-    /*for(i = 0; i < img.w*img.h; i ++){
+    /*Funciona*/
+    omp_set_dynamic(true);
+    #pragma omp parallel for simd
+    for(i = 0; i < img.w*img.h; i ++){
         obuf[3*i + 0] = img.img_r[i];
         obuf[3*i + 1] = img.img_g[i];
         obuf[3*i + 2] = img.img_b[i];
-    }*/
-
-    #pragma omp parallel
-    {
-        #pragma omp sections
-        {
-            #pragma omp section
-            {
-                /*Seccion 1*/
-                for( i = 0; i < img.w*img.h; i ++){
-                    obuf[3*i + 0] = img.img_r[i];
-                }
-            }
-            #pragma omp section
-            {
-                /*Seccion 2*/
-                for( i = 0; i < img.w*img.h; i ++){
-                    obuf[3*i + 1] = img.img_g[i];
-                }
-            }
-            #pragma omp section
-            {
-                /*Seccion 3*/
-                for( i = 0; i < img.w*img.h; i ++){
-                    obuf[3*i + 2] = img.img_b[i];
-                }
-            }
-        }
     }
 
     out_file = fopen(path, "wb");
