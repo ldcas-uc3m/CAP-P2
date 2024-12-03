@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <omp.h>
+#include <time.h>
 #include "hist-equ.h"
 
 void run_cpu_color_test(PPM_IMG img_in);
@@ -12,15 +13,25 @@ int main(){
     PGM_IMG img_ibuf_g;
     PPM_IMG img_ibuf_c;
 
+    struct timespec start1, end1, start2, end2;
+
     printf("Running contrast enhancement for gray-scale images.\n");
     img_ibuf_g = read_pgm("in.pgm");
+    clock_gettime(CLOCK_MONOTONIC, &start1);
+
     run_cpu_gray_test(img_ibuf_g);
+    clock_gettime(CLOCK_MONOTONIC, &end1);
     free_pgm(img_ibuf_g);
 
     printf("Running contrast enhancement for color images.\n");
     img_ibuf_c = read_ppm("in.ppm");
+    clock_gettime(CLOCK_MONOTONIC, &start2);
     run_cpu_color_test(img_ibuf_c);
+    clock_gettime(CLOCK_MONOTONIC, &end2);
     free_ppm(img_ibuf_c);
+
+    printf("Gray %f\n", ((end1.tv_sec-start1.tv_sec) + (end1.tv_nsec - start1.tv_nsec)*1e-9));
+    printf("Color %f\n", ((end2.tv_sec-start2.tv_sec) + (end2.tv_nsec - start2.tv_nsec)*1e-9));
 
     return 0;
 }

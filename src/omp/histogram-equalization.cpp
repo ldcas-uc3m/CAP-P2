@@ -53,8 +53,8 @@ void histogram_equalization(unsigned char * img_out, unsigned char * img_in,
     min = 0;
     i = 0;
     
-    
-    /*while(min == 0){
+    /*#pragma omp parallel
+    while(min == 0){
         min = hist_in[i++];
     }*/
 

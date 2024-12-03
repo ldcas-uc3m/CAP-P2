@@ -106,7 +106,8 @@ HSL_IMG rgb2hsl(PPM_IMG img_in)
     
     float var_r, var_g, var_b, var_min, var_max, del_max;
     omp_set_dynamic(true);
-    #pragma omp parallel for private(var_r, var_g, var_b, var_max, var_min, del_max, H, L, S)
+    //#pragma omp parallel for private(var_r, var_g, var_b, var_max, var_min, del_max, H, L, S)
+    #pragma omp parallel for private(var_r, var_g, var_b, var_max, var_min, del_max, H, S, L) shared(img_in, img_out)
     for(i = 0; i < img_in.w*img_in.h; i ++){
 
         var_r = ( (float)img_in.img_r[i]/255 );//Convert RGB to [0,1]
@@ -186,7 +187,8 @@ PPM_IMG hsl2rgb(HSL_IMG img_in)
 
     
     omp_set_dynamic(true);
-    #pragma omp parallel for simd
+    //#pragma omp parallel for simd 
+    #pragma omp parallel for private(i) shared(img_in, result)
     for(i = 0; i < img_in.width*img_in.height; i ++){
         float H = img_in.h[i];
         float S = img_in.s[i];
@@ -238,7 +240,7 @@ YUV_IMG rgb2yuv(PPM_IMG img_in)
 
     
     omp_set_dynamic(true);
-    #pragma omp parallel for simd
+    #pragma omp parallel for private(r,g,b,y,cb,cr)
     for(i = 0; i < img_out.w*img_out.h; i ++){
         r = img_in.img_r[i];
         g = img_in.img_g[i];
@@ -283,7 +285,7 @@ PPM_IMG yuv2rgb(YUV_IMG img_in)
 
     
     omp_set_dynamic(true);
-    #pragma omp parallel for simd
+    #pragma omp parallel for private(y,cb,cr,rt,gt,bt) schedule(static,64)
     for(i = 0; i < img_out.w*img_out.h; i ++){
         y  = (int)img_in.img_y[i];
         cb = (int)img_in.img_u[i] - 128;
