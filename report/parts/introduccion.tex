@@ -1,0 +1,13 @@
+\part{Introducción}
+% Aqui debemos colocar una introducción para comentar las pruebas y sucesos que se van a llevar a cabo
+La mejora de contraste es una operación fundamental en el procesamiento de imágenes, ampliamente utilizada en diversos campos científicos y tecnológicos.
+
+Entre las técnicas más utilizadas, la ecualización de histograma destaca por su efectividad y simplicidad. A través del análisis y transformación del histograma, es posible identificar y corregir regiones con intensidades predominantes, obteniendo un resultado visual más equilibrado y de mayor calidad.
+
+El presente trabajo tiene como objetivo optimizar una aplicación secuencial para la mejora de contraste de imágenes mediante la ecualización del histograma, aprovechando las capacidades de paralelización ofrecidas por MPI y OpenMP.
+
+El documento presenta un análisis del programa secuencial, una implementación\newline OpenMP, MPI y un formato híbrido que aproveche ambos \textit{frameworks}.
+
+En cada sección, se incluye una descripción metodológica basada en las cuatro fases de paralelización: descomposición, asignación, orquestación y reparto. Además, se presentan gráficos que muestran los tiempos de ejecución y la aceleración lograda en comparación con la versión secuencial. 
+
+Finalmente, las conclusiones recogen un análisis comparativo del rendimiento de las distintas estrategias de paralelización, destacando sus ventajas, limitaciones y casos de uso óptimos. Este trabajo tiene como meta no solo mejorar el tiempo de ejecución en el procesamiento del contraste de imágenes, sino también explorar y comprender cómo los paradigmas de paralelismo pueden ser utilizados para resolver problemas computacionalmente intensivos de manera eficiente.
