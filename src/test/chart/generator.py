@@ -3,11 +3,11 @@ from matplotlib.ticker import FuncFormatter
 import numpy as np
 
 
-# Plot and show execution times graphic
+# Plot and show execution times chart
 # sequential -> Map consisting of relation between number of processes and array of multiple tries
 # parallel -> Map consisting of relation between number of processes and array of multiple tries
 # parallel_name -> MPI or OpenMPI
-def execution_graphic(sequential: dict, parallel: dict, parallel_name: str):
+def execution_chart(sequential: dict, parallel: dict, parallel_name: str):
 
     seq_keys = list(sequential.keys())
     seq_means = [np.mean(values) for values in sequential.values()]
@@ -36,17 +36,17 @@ def execution_graphic(sequential: dict, parallel: dict, parallel_name: str):
     plt.title(f"Tiempos de ejecución: Secuencial vs {parallel_name}")
     plt.grid(True)
     plt.legend()
-    formatter = FuncFormatter(lambda x, _: f'{x:.4f}')  # Four decimals on graphic
+    formatter = FuncFormatter(lambda x, _: f'{x:.4f}')  # Four decimals on chart
     plt.gca().xaxis.set_major_formatter(formatter)
     plt.gca().yaxis.set_major_formatter(formatter)
     plt.show()
 
 
-# Plot and show speed-up metrics graphic
+# Plot and show speed-up metrics chart
 # sequential -> Map consisting of relation between number of processes and array of multiple tries
 # parallel -> Map consisting of relation between number of processes and array of multiple tries
 # parallel_name -> MPI or OpenMPI
-def speed_up_graphic(sequential: dict, parallel: dict, parallel_name: str):
+def speed_up_chart(sequential: dict, parallel: dict, parallel_name: str):
 
     processes = list(sequential.keys())  # sequential or parallel is valid
 
@@ -61,7 +61,7 @@ def speed_up_graphic(sequential: dict, parallel: dict, parallel_name: str):
     plt.title(f"{parallel_name}: Aceleración en relación al número de procesos")
     plt.grid(True)
     plt.legend()
-    formatter = FuncFormatter(lambda x, _: f'{x:.4f}')  # Four decimals on graphic
+    formatter = FuncFormatter(lambda x, _: f'{x:.4f}')  # Four decimals on chart
     plt.gca().xaxis.set_major_formatter(formatter)
     plt.gca().yaxis.set_major_formatter(formatter)
     plt.show()
@@ -149,8 +149,8 @@ def main():
     parallel_name = request_parallel_name()
 
     print("Los datos de entrada son válidos, generando gráficas...")
-    execution_graphic(sequential, parallel, parallel_name)
-    speed_up_graphic(sequential, parallel, parallel_name)
+    execution_chart(sequential, parallel, parallel_name)
+    speed_up_chart(sequential, parallel, parallel_name)
 
 
 if __name__ == "__main__":
