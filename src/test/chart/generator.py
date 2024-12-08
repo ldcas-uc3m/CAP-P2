@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from matplotlib.ticker import FuncFormatter
+from matplotlib.ticker import FuncFormatter, MultipleLocator
 import numpy as np
 
 
@@ -7,7 +7,7 @@ import numpy as np
 # sequential -> Map consisting of relation between number of processes and array of multiple tries
 # parallel -> Map consisting of relation between number of processes and array of multiple tries
 # parallel_name -> MPI or OpenMPI
-def execution_chart(sequential: dict, parallel: dict, parallel_name: str):
+def execution_chart(sequential: dict, parallel: dict, parallel_name: str, convertion_name: str):
 
     seq_keys = list(sequential.keys())
     seq_means = [np.mean(values) for values in sequential.values()]
@@ -24,6 +24,8 @@ def execution_chart(sequential: dict, parallel: dict, parallel_name: str):
         label="Secuencial",
         color="red"
     )
+    for x, y in zip(seq_keys, seq_means):
+        plt.text(x, y+0.05, f'{y:.3f}', fontsize=10, ha='center', va='bottom', color='black')
     plt.plot(
         par_keys,
         par_means,
@@ -31,14 +33,16 @@ def execution_chart(sequential: dict, parallel: dict, parallel_name: str):
         label=f"Paralelismo con {parallel_name}",
         color="blue"
     )
+    for x, y in zip(par_keys, par_means):
+        plt.text(x, y+0.05, f'{y:.3f}', fontsize=10, ha='center', va='bottom', color='black')
     plt.xlabel("Número de procesos")
     plt.ylabel("Tiempo de ejecución (s)")
-    plt.title(f"Tiempos de ejecución: Secuencial vs {parallel_name}")
+    plt.title(f"Tiempos de ejecución, {convertion_name}: Secuencial vs {parallel_name}")
     plt.grid(True)
     plt.legend()
-    formatter = FuncFormatter(lambda x, _: f'{x:.4f}')  # Four decimals on chart
-    plt.gca().xaxis.set_major_formatter(formatter)
+    formatter = FuncFormatter(lambda x, _: f'{x:.3f}')  # Four decimals on axis Y chart
     plt.gca().yaxis.set_major_formatter(formatter)
+    plt.gca().yaxis.set_major_locator(MultipleLocator(0.25))
     plt.show()
 
 
@@ -46,7 +50,8 @@ def execution_chart(sequential: dict, parallel: dict, parallel_name: str):
 # sequential -> Map consisting of relation between number of processes and array of multiple tries
 # parallel -> Map consisting of relation between number of processes and array of multiple tries
 # parallel_name -> MPI or OpenMPI
-def speed_up_chart(sequential: dict, parallel: dict, parallel_name: str):
+# convertion_name -> HSL or YUV
+def speed_up_chart(sequential: dict, parallel: dict, parallel_name: str, convertion_name: str):
 
     processes = list(sequential.keys())  # sequential or parallel is valid
 
@@ -55,15 +60,17 @@ def speed_up_chart(sequential: dict, parallel: dict, parallel_name: str):
     speed_up = [seq / par for seq, par in list(zip(seq_means, par_means))]
 
     plt.figure(figsize=(10, 5))
+    for x, y in zip(processes, speed_up):
+        plt.text(x, y+0.05, f'{y:.3f}', fontsize=10, ha='center', va='bottom', color='black')
     plt.plot(processes, speed_up, marker='o', color='orange', label="Speed-Up")
     plt.xlabel("Número de procesos")
     plt.ylabel("Aceleración")
-    plt.title(f"{parallel_name}: Aceleración en relación al número de procesos")
+    plt.title(f"{parallel_name}, {convertion_name}: Aceleración en relación al número de procesos")
     plt.grid(True)
     plt.legend()
-    formatter = FuncFormatter(lambda x, _: f'{x:.4f}')  # Four decimals on chart
-    plt.gca().xaxis.set_major_formatter(formatter)
+    formatter = FuncFormatter(lambda x, _: f'{x:.3f}')  # Four decimals on axis Y chart
     plt.gca().yaxis.set_major_formatter(formatter)
+    plt.gca().yaxis.set_major_locator(MultipleLocator(0.25))
     plt.show()
 
 
@@ -136,6 +143,18 @@ def request_parallel_name():
             print(f"Paralelismo inválido. Debe ser 'OpenMP', 'MPI' o 'OpenMP y MPI'. Valor recibido: {paralelismo}")
 
 
+# Request convertion name for user's case
+# Only accepted values -> "HSL" or "YUV"
+def request_convertion_name():
+
+    while True:
+        convertion = input("Introduce la conversión medida (HSL o YUV): ").strip()
+        if convertion in {"HSL", "YUV"}:
+            return convertion
+        else:
+            print(f"Conversión inválida. Debe ser 'HSL' o 'YUV'. Valor recibido: {convertion}")
+
+
 def main():
 
     sequential, parallel = process_input()
@@ -147,10 +166,11 @@ def main():
         return
 
     parallel_name = request_parallel_name()
+    convertion_name = request_convertion_name()
 
     print("Los datos de entrada son válidos, generando gráficas...")
-    execution_chart(sequential, parallel, parallel_name)
-    speed_up_chart(sequential, parallel, parallel_name)
+    execution_chart(sequential, parallel, parallel_name, convertion_name)
+    speed_up_chart(sequential, parallel, parallel_name, convertion_name)
 
 
 if __name__ == "__main__":
