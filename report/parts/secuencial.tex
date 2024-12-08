@@ -1,2 +1,9 @@
 \part{Programa secuencial}
 % Aquí debemos incluir los tiempos del código secuencial, de primera mano, quizás con gráficas añadidas al igual que como vamos a hacer después con el código paralelo a modo de introducción
+El programa base, presentado en el enunciado de la práctica, ofrece una ecualización de histograma, así como sus respectivos pasos para calcularlo.
+
+Está presente un reparto homogéneo de iteraciones y cálculos redundantes, con gran cantidad de accesos y vectores. La \figref{hslsecuencial} y \figref{yuvsecuencial} recogen las métricas de ejecución obtenidas en las máquinas del laboratorio, Avignon.
+Será turno de los desarrolladores y de los \textit{frameworks} OpenMP y MPI reducir los tiempos, además de mejorar la eficiencia y eficacia al programa.
+
+\rasterfigure[.9]{hslsecuencial}{Tiempo de ejecución HSL del programa secuencial.}
+\rasterfigure[.9]{yuvsecuencial}{Tiempo de ejecución YUV del programa secuencial.}
