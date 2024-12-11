@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 #include "hist-equ.h"
 
 void run_cpu_color_test(PPM_IMG img_in);
@@ -27,16 +28,21 @@ int main(){
 void run_cpu_color_test(PPM_IMG img_in)
 {
     PPM_IMG img_obuf_hsl, img_obuf_yuv;
+    struct timespec start1, end1, start2, end2;
 
     printf("Starting CPU processing...\n");
 
+    clock_gettime(CLOCK_MONOTONIC, &start1);
     img_obuf_hsl = contrast_enhancement_c_hsl(img_in);
-    printf("HSL processing time: %f (ms)\n", 0.0f /* TIMER */ );
+    clock_gettime(CLOCK_MONOTONIC, &end1);
+    printf("HSL processing time: %f (sec)\n", ((end1.tv_sec-start1.tv_sec) + (end1.tv_nsec - start1.tv_nsec)*1e-9) /* TIMER */ );
 
     write_ppm(img_obuf_hsl, "out_hsl.ppm");
 
+    clock_gettime(CLOCK_MONOTONIC, &start2);
     img_obuf_yuv = contrast_enhancement_c_yuv(img_in);
-    printf("YUV processing time: %f (ms)\n", 0.0f /* TIMER */);
+    clock_gettime(CLOCK_MONOTONIC, &end2);
+    printf("YUV processing time: %f (sec)\n", ((end2.tv_sec-start2.tv_sec) + (end2.tv_nsec - start2.tv_nsec)*1e-9) /* TIMER */);
 
     write_ppm(img_obuf_yuv, "out_yuv.ppm");
 
@@ -50,12 +56,14 @@ void run_cpu_color_test(PPM_IMG img_in)
 void run_cpu_gray_test(PGM_IMG img_in)
 {
     PGM_IMG img_obuf;
-
+    struct timespec start, end;
 
     printf("Starting CPU processing...\n");
 
+    clock_gettime(CLOCK_MONOTONIC, &start);
     img_obuf = contrast_enhancement_g(img_in);
-    printf("Processing time: %f (ms)\n", 0.0f /* TIMER */ );
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    printf("Processing time: %f (sec)\n", ((end.tv_sec-start.tv_sec) + (end.tv_nsec - start.tv_nsec)*1e-9) /* TIMER */ );
 
     write_pgm(img_obuf, "out.pgm");
     free_pgm(img_obuf);
