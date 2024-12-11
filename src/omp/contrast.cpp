@@ -2,7 +2,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <omp.h>
-#include <time.h>
 #include "hist-equ.h"
 
 void run_cpu_color_test(PPM_IMG img_in);
@@ -10,28 +9,22 @@ void run_cpu_gray_test(PGM_IMG img_in);
 
 
 int main(){
+    
+    omp_set_dynamic(0); // Deshabilitar ajuste dinamico de hilos
+    omp_set_num_threads(omp_get_max_threads()); // Usar hilos configurados por OMP_NUM_THREADS
+    
     PGM_IMG img_ibuf_g;
     PPM_IMG img_ibuf_c;
 
-    struct timespec start1, end1, start2, end2;
-
     printf("Running contrast enhancement for gray-scale images.\n");
     img_ibuf_g = read_pgm("in.pgm");
-    clock_gettime(CLOCK_MONOTONIC, &start1);
-
     run_cpu_gray_test(img_ibuf_g);
-    clock_gettime(CLOCK_MONOTONIC, &end1);
     free_pgm(img_ibuf_g);
 
     printf("Running contrast enhancement for color images.\n");
     img_ibuf_c = read_ppm("in.ppm");
-    clock_gettime(CLOCK_MONOTONIC, &start2);
     run_cpu_color_test(img_ibuf_c);
-    clock_gettime(CLOCK_MONOTONIC, &end2);
     free_ppm(img_ibuf_c);
-
-    printf("Gray %f\n", ((end1.tv_sec-start1.tv_sec) + (end1.tv_nsec - start1.tv_nsec)*1e-9));
-    printf("Color %f\n", ((end2.tv_sec-start2.tv_sec) + (end2.tv_nsec - start2.tv_nsec)*1e-9));
 
     return 0;
 }
@@ -39,16 +32,21 @@ int main(){
 void run_cpu_color_test(PPM_IMG img_in)
 {
     PPM_IMG img_obuf_hsl, img_obuf_yuv;
+    double start_time1, end_time1, start_time2, end_time2;
 
     printf("Starting CPU processing...\n");
-
+    
+    start_time1 = omp_get_wtime();
     img_obuf_hsl = contrast_enhancement_c_hsl(img_in);
-    printf("HSL processing time: %f (ms)\n", 0.0f /* TIMER */ );
+    end_time1 = omp_get_wtime();
+    printf("HSL processing time: %f (sec)\n", (end_time1 - start_time1) /* TIMER */ );
 
     write_ppm(img_obuf_hsl, "out_hsl.ppm");
 
+    start_time2 = omp_get_wtime();
     img_obuf_yuv = contrast_enhancement_c_yuv(img_in);
-    printf("YUV processing time: %f (ms)\n", 0.0f /* TIMER */);
+    end_time2 = omp_get_wtime();
+    printf("YUV processing time: %f (sec)\n", (end_time2 - start_time2) /* TIMER */);
 
     write_ppm(img_obuf_yuv, "out_yuv.ppm");
 
@@ -62,12 +60,14 @@ void run_cpu_color_test(PPM_IMG img_in)
 void run_cpu_gray_test(PGM_IMG img_in)
 {
     PGM_IMG img_obuf;
-
+    double start_time, end_time;
 
     printf("Starting CPU processing...\n");
 
+    start_time = omp_get_wtime();
     img_obuf = contrast_enhancement_g(img_in);
-    printf("Processing time: %f (ms)\n", 0.0f /* TIMER */ );
+    end_time = omp_get_wtime();
+    printf("Processing time: %f (sec)\n", (end_time - start_time) /* TIMER */ );
 
     write_pgm(img_obuf, "out.pgm");
     free_pgm(img_obuf);
@@ -106,8 +106,6 @@ PPM_IMG read_ppm(const char * path){
 
     fread(ibuf,sizeof(unsigned char), 3 * result.w*result.h, in_file);
 
-    /*Esta correcto*/
-    omp_set_dynamic(true);
     #pragma omp parallel for simd
     for(i = 0; i < result.w*result.h; i ++){
         result.img_r[i] = ibuf[3*i + 0];
@@ -126,8 +124,6 @@ void write_ppm(PPM_IMG img, const char * path){
     int i, mult;
     char * obuf = (char *)malloc(3 * img.w * img.h * sizeof(char));
 
-    /*Funciona*/
-    omp_set_dynamic(true);
     #pragma omp parallel for simd
     for(i = 0; i < img.w*img.h; i ++){
         obuf[3*i + 0] = img.img_r[i];
