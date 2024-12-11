@@ -105,8 +105,7 @@ HSL_IMG rgb2hsl(PPM_IMG img_in)
 
     
     float var_r, var_g, var_b, var_min, var_max, del_max;
-    omp_set_dynamic(true);
-    //#pragma omp parallel for private(var_r, var_g, var_b, var_max, var_min, del_max, H, L, S)
+
     #pragma omp parallel for private(var_r, var_g, var_b, var_max, var_min, del_max, H, S, L) shared(img_in, img_out)
     for(i = 0; i < img_in.w*img_in.h; i ++){
 
@@ -186,9 +185,7 @@ PPM_IMG hsl2rgb(HSL_IMG img_in)
     result.img_b = (unsigned char *)malloc(result.w * result.h * sizeof(unsigned char));
 
     
-    omp_set_dynamic(true);
-    //#pragma omp parallel for simd 
-    #pragma omp parallel for private(i) shared(img_in, result)
+    #pragma omp parallel for shared(img_in, result)
     for(i = 0; i < img_in.width*img_in.height; i ++){
         float H = img_in.h[i];
         float S = img_in.s[i];
@@ -239,7 +236,6 @@ YUV_IMG rgb2yuv(PPM_IMG img_in)
     img_out.img_v = (unsigned char *)malloc(sizeof(unsigned char)*img_out.w*img_out.h);
 
     
-    omp_set_dynamic(true);
     #pragma omp parallel for private(r,g,b,y,cb,cr)
     for(i = 0; i < img_out.w*img_out.h; i ++){
         r = img_in.img_r[i];
@@ -284,8 +280,7 @@ PPM_IMG yuv2rgb(YUV_IMG img_in)
     img_out.img_b = (unsigned char *)malloc(sizeof(unsigned char)*img_out.w*img_out.h);
 
     
-    omp_set_dynamic(true);
-    #pragma omp parallel for private(y,cb,cr,rt,gt,bt) schedule(static,64)
+    #pragma omp parallel for private(y,cb,cr,rt,gt,bt) schedule(static)
     for(i = 0; i < img_out.w*img_out.h; i ++){
         y  = (int)img_in.img_y[i];
         cb = (int)img_in.img_u[i] - 128;
