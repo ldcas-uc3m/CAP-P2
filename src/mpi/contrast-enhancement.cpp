@@ -1,40 +1,58 @@
+#include <iostream>
+#include <cmath>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <mpi.h>
 #include "hist-equ.h"
 
-PGM_IMG contrast_enhancement_g(PGM_IMG img_in)
-{
-    PGM_IMG result;
-    int hist[256];
 
+PGM_IMG contrast_enhancement_g(PGM_IMG img_in, int full_height)
+{
+    int w_size;  // number of total nodes
+    int w_rank;  // node ID
+
+    MPI_Comm_size(MPI_COMM_WORLD, &w_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &w_rank);
+
+    int hist[256];  // local histogram
+    int all_hist[256];  // global histogram
+
+    PGM_IMG result;
     result.w = img_in.w;
     result.h = img_in.h;
     result.img = (unsigned char *)malloc(result.w * result.h * sizeof(unsigned char));
 
-    histogram(hist, img_in.img, img_in.h * img_in.w, 256);
-    histogram_equalization(result.img,img_in.img,hist,result.w*result.h, 256);
-    return result;
-}
+    // compute local histogram
+    // we need to prevent counting the overlapping rows two times, so we'll adjust the image start place and size
+    int rows = (img_in.h - 2);
+    if (w_rank == 0) ++rows;
+    if (w_rank == w_size - 1) ++rows;
 
-PPM_IMG contrast_enhancement_c_rgb(PPM_IMG img_in)
-{
-    PPM_IMG result;
-    int hist[256];
+    histogram(
+        hist,
+        w_rank == 0 ? img_in.img : img_in.img + img_in.w,  // start position
+        rows * img_in.w,
+        256
+    );
 
-    result.w = img_in.w;
-    result.h = img_in.h;
-    result.img_r = (unsigned char *)malloc(result.w * result.h * sizeof(unsigned char));
-    result.img_g = (unsigned char *)malloc(result.w * result.h * sizeof(unsigned char));
-    result.img_b = (unsigned char *)malloc(result.w * result.h * sizeof(unsigned char));
+    // add all partial histograms to compute global histogram
+    MPI_Allreduce(
+        hist,
+        all_hist,
+        256,
+        MPI_INT,
+        MPI_SUM,
+        MPI_COMM_WORLD
+    );
 
-    histogram(hist, img_in.img_r, img_in.h * img_in.w, 256);
-    histogram_equalization(result.img_r,img_in.img_r,hist,result.w*result.h, 256);
-    histogram(hist, img_in.img_g, img_in.h * img_in.w, 256);
-    histogram_equalization(result.img_g,img_in.img_g,hist,result.w*result.h, 256);
-    histogram(hist, img_in.img_b, img_in.h * img_in.w, 256);
-    histogram_equalization(result.img_b,img_in.img_b,hist,result.w*result.h, 256);
+    // compute global min & d for histogram eq
+    int i = 0;
+    int min = 0;
+    while (min == 0) min = all_hist[i++];
+    int d = full_height * img_in.w - min;
 
+    histogram_equalization(result.img,img_in.img,all_hist,result.w*result.h, 256, min, d);
     return result;
 }
 
@@ -51,7 +69,11 @@ PPM_IMG contrast_enhancement_c_yuv(PPM_IMG img_in)
     y_equ = (unsigned char *)malloc(yuv_med.h*yuv_med.w*sizeof(unsigned char));
 
     histogram(hist, yuv_med.img_y, yuv_med.h * yuv_med.w, 256);
-    histogram_equalization(y_equ,yuv_med.img_y,hist,yuv_med.h * yuv_med.w, 256);
+    int i = 0;
+    int min = 0;
+    while (min == 0) min = hist[i++];
+    int d = yuv_med.h - min;
+    histogram_equalization(y_equ,yuv_med.img_y,hist,yuv_med.h * yuv_med.w, 256, min, d);
 
     free(yuv_med.img_y);
     yuv_med.img_y = y_equ;
@@ -76,7 +98,11 @@ PPM_IMG contrast_enhancement_c_hsl(PPM_IMG img_in)
     l_equ = (unsigned char *)malloc(hsl_med.height*hsl_med.width*sizeof(unsigned char));
 
     histogram(hist, hsl_med.l, hsl_med.height * hsl_med.width, 256);
-    histogram_equalization(l_equ, hsl_med.l,hist,hsl_med.width*hsl_med.height, 256);
+    int i = 0;
+    int min = 0;
+    while (min == 0) min = hist[i++];
+    int d = hsl_med.height - min;
+    histogram_equalization(l_equ, hsl_med.l,hist,hsl_med.width*hsl_med.height, 256, min, d);
 
     free(hsl_med.l);
     hsl_med.l = l_equ;

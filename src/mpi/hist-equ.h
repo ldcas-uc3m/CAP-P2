@@ -51,10 +51,10 @@ PPM_IMG yuv2rgb(YUV_IMG img_in);
 
 void histogram(int * hist_out, unsigned char * img_in, int img_size, int nbr_bin);
 void histogram_equalization(unsigned char * img_out, unsigned char * img_in,
-                            int * hist_in, int img_size, int nbr_bin);
+                            int * hist_in, int img_size, int nbr_bin, int min, int d);
 
 //Contrast enhancement for gray-scale images
-PGM_IMG contrast_enhancement_g(PGM_IMG img_in);
+PGM_IMG contrast_enhancement_g(PGM_IMG img_in, int full_height);
 
 //Contrast enhancement for color images
 PPM_IMG contrast_enhancement_c_rgb(PPM_IMG img_in);

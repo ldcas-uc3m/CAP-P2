@@ -3,7 +3,8 @@ cmake_minimum_required(VERSION 3.1)
 project(
   contrast
   VERSION 1.0
-  LANGUAGES CXX)
+  LANGUAGES CXX
+)
 
 
 find_package(MPI)
@@ -44,7 +45,5 @@ add_executable(
   src/omp/contrast.cpp
 )
 
-target_link_libraries(contrast ${MPI_C_LIBRARIES})
-target_link_libraries(contrast-omp ${MPI_C_LIBRARIES})
-target_link_libraries(contrast-mpi ${MPI_C_LIBRARIES})
-target_link_libraries(contrast-mpi-omp ${MPI_C_LIBRARIES})
+target_link_libraries(contrast-mpi MPI::MPI_CXX)
+target_link_libraries(contrast-mpi-omp MPI::MPI_CXX)
