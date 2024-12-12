@@ -95,11 +95,6 @@ PPM_IMG contrast_enhancement_c_yuv(PPM_IMG img_in, int full_height)
         MPI_COMM_WORLD
     );
 
-    if (w_rank == 0) {
-        int sum = 0; for (int i = 0; i < 255; ++i) sum += all_hist[i];
-        std::cout << "YUV hist sum: " << sum << std::endl;
-    }
-
     // compute global min & d for histogram eq
     int i = 0;
     int min = 0;
