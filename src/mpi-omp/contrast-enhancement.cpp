@@ -1,57 +1,146 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <omp.h>
+#include <mpi.h>
 #include "hist-equ.h"
 
-PGM_IMG contrast_enhancement_g(PGM_IMG img_in)
-{
-    PGM_IMG result;
-    int hist[256];
 
+PGM_IMG contrast_enhancement_g(PGM_IMG img_in, int full_height)
+{
+    int w_size;  // number of total nodes
+    int w_rank;  // node ID
+
+    MPI_Comm_size(MPI_COMM_WORLD, &w_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &w_rank);
+
+    int hist[256];  // local histogram
+    int all_hist[256];  // global histogram
+
+    PGM_IMG result;
     result.w = img_in.w;
     result.h = img_in.h;
     result.img = (unsigned char *)malloc(result.w * result.h * sizeof(unsigned char));
 
-    histogram(hist, img_in.img, img_in.h * img_in.w, 256);
-    histogram_equalization(result.img,img_in.img,hist,result.w*result.h, 256);
+    // compute local histogram
+    // we need to prevent counting the overlapping rows two times, so we'll adjust the image start place and size
+    int rows = (img_in.h - 2);
+    if (w_rank == 0) ++rows;
+    if (w_rank == w_size - 1) ++rows;
+
+    histogram(
+        hist,
+        w_rank == 0 ? img_in.img : img_in.img + img_in.w,  // start position
+        rows * img_in.w,
+        256
+    );
+
+    // add all partial histograms to compute global histogram
+    MPI_Allreduce(
+        hist,
+        all_hist,
+        256,
+        MPI_INT,
+        MPI_SUM,
+        MPI_COMM_WORLD
+    );
+
+    // compute global min & d for histogram eq
+    int i = 0;
+    int min = 0;
+    const int nbr_bin = 256;
+
+    #pragma omp parallel
+    {
+        int min_local = 0;
+
+        #pragma omp parallel for simd
+        for(i = 0; i < nbr_bin; i++){
+            if (min_local == 0 && all_hist[i] != 0){
+                min_local = all_hist[i];
+            }
+        }
+
+        #pragma omp critical
+        if (min == 0 || (min_local != 0 && min_local > min)){
+            min = min_local;
+        }
+    }
+    // while (min == 0) min = all_hist[i++];
+
+    int d = full_height * img_in.w - min;
+
+    histogram_equalization(result.img,img_in.img,all_hist,result.w*result.h, 256, min, d);
     return result;
 }
 
-PPM_IMG contrast_enhancement_c_rgb(PPM_IMG img_in)
+
+PPM_IMG contrast_enhancement_c_yuv(PPM_IMG img_in, int full_height)
 {
-    PPM_IMG result;
-    int hist[256];
+    int w_size;  // number of total nodes
+    int w_rank;  // node ID
 
-    result.w = img_in.w;
-    result.h = img_in.h;
-    result.img_r = (unsigned char *)malloc(result.w * result.h * sizeof(unsigned char));
-    result.img_g = (unsigned char *)malloc(result.w * result.h * sizeof(unsigned char));
-    result.img_b = (unsigned char *)malloc(result.w * result.h * sizeof(unsigned char));
+    MPI_Comm_size(MPI_COMM_WORLD, &w_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &w_rank);
 
-    histogram(hist, img_in.img_r, img_in.h * img_in.w, 256);
-    histogram_equalization(result.img_r,img_in.img_r,hist,result.w*result.h, 256);
-    histogram(hist, img_in.img_g, img_in.h * img_in.w, 256);
-    histogram_equalization(result.img_g,img_in.img_g,hist,result.w*result.h, 256);
-    histogram(hist, img_in.img_b, img_in.h * img_in.w, 256);
-    histogram_equalization(result.img_b,img_in.img_b,hist,result.w*result.h, 256);
-
-    return result;
-}
-
-
-PPM_IMG contrast_enhancement_c_yuv(PPM_IMG img_in)
-{
     YUV_IMG yuv_med;
     PPM_IMG result;
-
     unsigned char * y_equ;
+
     int hist[256];
+    int all_hist[256];
 
     yuv_med = rgb2yuv(img_in);
     y_equ = (unsigned char *)malloc(yuv_med.h*yuv_med.w*sizeof(unsigned char));
 
-    histogram(hist, yuv_med.img_y, yuv_med.h * yuv_med.w, 256);
-    histogram_equalization(y_equ,yuv_med.img_y,hist,yuv_med.h * yuv_med.w, 256);
+    // compute local histogram
+    int rows = (yuv_med.h - 2);
+    if (w_rank == 0) ++rows;
+    if (w_rank == w_size - 1) ++rows;
+
+    histogram(
+        hist,
+        w_rank == 0 ? yuv_med.img_y : yuv_med.img_y + yuv_med.w,
+        rows * yuv_med.w,
+        256
+    );
+
+    // add all partial histograms to compute global histogram
+    MPI_Allreduce(
+        hist,
+        all_hist,
+        256,
+        MPI_INT,
+        MPI_SUM,
+        MPI_COMM_WORLD
+    );
+
+    // compute global min & d for histogram eq
+    int i = 0;
+    int min = 0;
+    const int nbr_bin = 256;
+
+    #pragma omp parallel
+    {
+        int min_local = 0;
+
+        #pragma omp parallel for simd
+        for(i = 0; i < nbr_bin; i++){
+            if (min_local == 0 && all_hist[i] != 0){
+                min_local = all_hist[i];
+            }
+        }
+
+        #pragma omp critical
+        if (min == 0 || (min_local != 0 && min_local > min)){
+            min = min_local;
+        }
+    }
+    // while (min == 0) min = all_hist[i++];
+
+    int d = full_height * img_in.w - min;
+
+    histogram_equalization(y_equ,yuv_med.img_y,all_hist,yuv_med.h * yuv_med.w, 256, min, d);
 
     free(yuv_med.img_y);
     yuv_med.img_y = y_equ;
@@ -64,19 +153,72 @@ PPM_IMG contrast_enhancement_c_yuv(PPM_IMG img_in)
     return result;
 }
 
-PPM_IMG contrast_enhancement_c_hsl(PPM_IMG img_in)
+PPM_IMG contrast_enhancement_c_hsl(PPM_IMG img_in, int full_height)
 {
+    int w_size;  // number of total nodes
+    int w_rank;  // node ID
+
+    MPI_Comm_size(MPI_COMM_WORLD, &w_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &w_rank);
+
     HSL_IMG hsl_med;
     PPM_IMG result;
-
     unsigned char * l_equ;
-    int hist[256];
+
+    int hist[256];  // local histogram
+    int all_hist[256];  // global histogram
 
     hsl_med = rgb2hsl(img_in);
     l_equ = (unsigned char *)malloc(hsl_med.height*hsl_med.width*sizeof(unsigned char));
 
-    histogram(hist, hsl_med.l, hsl_med.height * hsl_med.width, 256);
-    histogram_equalization(l_equ, hsl_med.l,hist,hsl_med.width*hsl_med.height, 256);
+    // compute local histogram
+    int rows = (hsl_med.height - 2);
+    if (w_rank == 0) ++rows;
+    if (w_rank == w_size - 1) ++rows;
+
+    histogram(
+        hist,
+        w_rank == 0 ? hsl_med.l : hsl_med.l + hsl_med.width,
+        rows * hsl_med.width,
+        256
+    );
+
+    // add all partial histograms to compute global histogram
+    MPI_Allreduce(
+        hist,
+        all_hist,
+        256,
+        MPI_INT,
+        MPI_SUM,
+        MPI_COMM_WORLD
+    );
+
+    // compute global min & d for histogram eq
+    int i = 0;
+    int min = 0;
+    const int nbr_bin = 256;
+
+    #pragma omp parallel
+    {
+        int min_local = 0;
+
+        #pragma omp parallel for simd
+        for(i = 0; i < nbr_bin; i++){
+            if (min_local == 0 && all_hist[i] != 0){
+                min_local = all_hist[i];
+            }
+        }
+
+        #pragma omp critical
+        if (min == 0 || (min_local != 0 && min_local > min)){
+            min = min_local;
+        }
+    }
+    // while (min == 0) min = all_hist[i++];
+
+    int d = full_height * img_in.w - min;
+
+    histogram_equalization(l_equ, hsl_med.l,all_hist,hsl_med.width*hsl_med.height, 256, min, d);
 
     free(hsl_med.l);
     hsl_med.l = l_equ;
@@ -102,16 +244,20 @@ HSL_IMG rgb2hsl(PPM_IMG img_in)
     img_out.s = (float *)malloc(img_in.w * img_in.h * sizeof(float));
     img_out.l = (unsigned char *)malloc(img_in.w * img_in.h * sizeof(unsigned char));
 
+
+    float var_r, var_g, var_b, var_min, var_max, del_max;
+
+    #pragma omp parallel for private(var_r, var_g, var_b, var_max, var_min, del_max, H, S, L) shared(img_in, img_out)
     for(i = 0; i < img_in.w*img_in.h; i ++){
 
-        float var_r = ( (float)img_in.img_r[i]/255 );//Convert RGB to [0,1]
-        float var_g = ( (float)img_in.img_g[i]/255 );
-        float var_b = ( (float)img_in.img_b[i]/255 );
-        float var_min = (var_r < var_g) ? var_r : var_g;
+        var_r = ( (float)img_in.img_r[i]/255 );//Convert RGB to [0,1]
+        var_g = ( (float)img_in.img_g[i]/255 );
+        var_b = ( (float)img_in.img_b[i]/255 );
+        var_min = (var_r < var_g) ? var_r : var_g;
         var_min = (var_min < var_b) ? var_min : var_b;   //min. value of RGB
-        float var_max = (var_r > var_g) ? var_r : var_g;
+        var_max = (var_r > var_g) ? var_r : var_g;
         var_max = (var_max > var_b) ? var_max : var_b;   //max. value of RGB
-        float del_max = var_max - var_min;               //Delta RGB value
+        del_max = var_max - var_min;               //Delta RGB value
 
         L = ( var_max + var_min ) / 2;
         if ( del_max == 0 )//This is a gray, no chroma...
@@ -179,6 +325,8 @@ PPM_IMG hsl2rgb(HSL_IMG img_in)
     result.img_g = (unsigned char *)malloc(result.w * result.h * sizeof(unsigned char));
     result.img_b = (unsigned char *)malloc(result.w * result.h * sizeof(unsigned char));
 
+
+    #pragma omp parallel for shared(img_in, result)
     for(i = 0; i < img_in.width*img_in.height; i ++){
         float H = img_in.h[i];
         float S = img_in.s[i];
@@ -228,6 +376,8 @@ YUV_IMG rgb2yuv(PPM_IMG img_in)
     img_out.img_u = (unsigned char *)malloc(sizeof(unsigned char)*img_out.w*img_out.h);
     img_out.img_v = (unsigned char *)malloc(sizeof(unsigned char)*img_out.w*img_out.h);
 
+
+    #pragma omp parallel for private(r,g,b,y,cb,cr)
     for(i = 0; i < img_out.w*img_out.h; i ++){
         r = img_in.img_r[i];
         g = img_in.img_g[i];
@@ -270,6 +420,8 @@ PPM_IMG yuv2rgb(YUV_IMG img_in)
     img_out.img_g = (unsigned char *)malloc(sizeof(unsigned char)*img_out.w*img_out.h);
     img_out.img_b = (unsigned char *)malloc(sizeof(unsigned char)*img_out.w*img_out.h);
 
+
+    #pragma omp parallel for private(y,cb,cr,rt,gt,bt) schedule(static)
     for(i = 0; i < img_out.w*img_out.h; i ++){
         y  = (int)img_in.img_y[i];
         cb = (int)img_in.img_u[i] - 128;
