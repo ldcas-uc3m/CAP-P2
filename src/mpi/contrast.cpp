@@ -6,8 +6,8 @@
 #include <mpi.h>
 #include "hist-equ.h"
 
-void run_cpu_color_test(PPM_IMG img_in, int full_h);
-void run_cpu_gray_test(PGM_IMG img_in, int full_h);
+void run_cpu_color_test(PPM_IMG img_in, int full_h, double tstart);
+void run_cpu_gray_test(PGM_IMG img_in, int full_h, double tstart);
 
 
 
@@ -22,6 +22,7 @@ int main(){
     MPI_Comm_size(MPI_COMM_WORLD, &w_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &w_rank);
 
+    double tstart;
 
     /* grayscale */
 
@@ -33,6 +34,9 @@ int main(){
     if (w_rank == 0) {
         printf("Running contrast enhancement for gray-scale images.\n");
         img_ibuf_g = read_pgm("in.pgm");
+
+        tstart = MPI_Wtime();
+
         width = img_ibuf_g.w;
         height = img_ibuf_g.h;
 
@@ -89,7 +93,7 @@ int main(){
         img_ibuf_g.h = counts[w_rank] / width;
         img_ibuf_g.img = rcv_buf_g.data();
 
-        run_cpu_gray_test(img_ibuf_g, height);
+        run_cpu_gray_test(img_ibuf_g, height, tstart);
     }  // ~rcv_buf_g()
 
 
@@ -101,6 +105,8 @@ int main(){
     if (w_rank == 0) {
         printf("Running contrast enhancement for color images.\n");
         img_ibuf_c = read_ppm("in.ppm");
+
+        tstart = MPI_Wtime();
     }
 
     // assume img is same size as grayscale
@@ -162,27 +168,20 @@ int main(){
     img_ibuf_c.w = width;
     img_ibuf_c.h = counts[w_rank] / width;
 
-    run_cpu_color_test(img_ibuf_c, height);
+    run_cpu_color_test(img_ibuf_c, height, tstart);
 
     MPI_Finalize();
     return 0;
 }
 
 
-void run_cpu_color_test(PPM_IMG img_in, int full_h)
+void run_cpu_color_test(PPM_IMG img_in, int full_h, double tstart)
 {
     int w_size;  // number of total processes
     int w_rank;  // process ID
 
     MPI_Comm_size(MPI_COMM_WORLD, &w_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &w_rank);
-
-
-    double tstart;
-    if (w_rank == 0) {
-        printf("Starting CPU processing...\n");
-        tstart = MPI_Wtime();
-    }
 
 
     /* HSL */
@@ -265,17 +264,17 @@ void run_cpu_color_test(PPM_IMG img_in, int full_h)
 
     if (w_rank == 0) {
         double tfinish = MPI_Wtime();
-        double totalTime = tfinish - tstart;
 
         img_obuf_hsl.h = full_h;
-
-        printf("HSL Processing time: %f s\n", totalTime);
-
         write_ppm(img_obuf_hsl, "out_hsl.ppm");
+
+        printf("HSL processing time: %f s\n", tfinish - tstart);
     }
 
 
     /* YUV */
+
+    if (w_rank == 0) tstart = MPI_Wtime();  // reset timer
 
     PPM_IMG img_obuf_yuv = contrast_enhancement_c_yuv(img_in, full_h);
 
@@ -327,13 +326,11 @@ void run_cpu_color_test(PPM_IMG img_in, int full_h)
 
     if (w_rank == 0) {
         double tfinish = MPI_Wtime();
-        double totalTime = tfinish - tstart;
 
         img_obuf_yuv.h = full_h;
-
-        printf("YUV Processing time: %f s\n", totalTime);
-
         write_ppm(img_obuf_yuv, "out_yuv.ppm");
+
+        printf("YUV processing time: %f s\n", tfinish - tstart);
     }
 
 }
@@ -341,7 +338,7 @@ void run_cpu_color_test(PPM_IMG img_in, int full_h)
 
 
 
-void run_cpu_gray_test(PGM_IMG img_in, int full_h)
+void run_cpu_gray_test(PGM_IMG img_in, int full_h, double tstart)
 {
     int w_size;  // number of total processes
     int w_rank;  // process ID
@@ -349,15 +346,8 @@ void run_cpu_gray_test(PGM_IMG img_in, int full_h)
     MPI_Comm_size(MPI_COMM_WORLD, &w_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &w_rank);
 
-    PGM_IMG img_obuf;
+    PGM_IMG img_obuf = contrast_enhancement_g(img_in, full_h);
 
-    double tstart;
-    if (w_rank == 0) {
-        printf("Starting CPU processing...\n");
-        tstart = MPI_Wtime();
-    }
-
-    img_obuf = contrast_enhancement_g(img_in, full_h);
 
     // join the image back
 
@@ -395,19 +385,16 @@ void run_cpu_gray_test(PGM_IMG img_in, int full_h)
 
     if (w_rank == 0) {
         double tfinish = MPI_Wtime();
-        double totalTime = tfinish - tstart;
 
         // re-save the full image
         img_obuf.h = full_h;
         img_obuf.img = rcv_img_obuf.data();
-
-        printf("Processing time: %f s\n", totalTime);
-
         write_pgm(img_obuf, "out.pgm");
+
+        printf("Grayscale processing time: %f s\n", tfinish - tstart);
     }
 
-    // free_pgm(img_obuf);
-}  // ~rcv_img_obuf() (free(img_obuf.img))
+}
 
 
 
