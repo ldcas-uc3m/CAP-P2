@@ -1,5 +1,3 @@
-#include <iostream>
-#include <cmath>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -67,20 +65,48 @@ PPM_IMG contrast_enhancement_c_yuv(PPM_IMG img_in, int full_height)
 
     YUV_IMG yuv_med;
     PPM_IMG result;
-
     unsigned char * y_equ;
+
     int hist[256];
     int all_hist[256];
 
     yuv_med = rgb2yuv(img_in);
     y_equ = (unsigned char *)malloc(yuv_med.h*yuv_med.w*sizeof(unsigned char));
 
-    histogram(hist, yuv_med.img_y, yuv_med.h * yuv_med.w, 256);
+    // compute local histogram
+    int rows = (yuv_med.h - 2);
+    if (w_rank == 0) ++rows;
+    if (w_rank == w_size - 1) ++rows;
+
+    histogram(
+        hist,
+        w_rank == 0 ? yuv_med.img_y : yuv_med.img_y + yuv_med.w,
+        rows * yuv_med.w,
+        256
+    );
+
+    // add all partial histograms to compute global histogram
+    MPI_Allreduce(
+        hist,
+        all_hist,
+        256,
+        MPI_INT,
+        MPI_SUM,
+        MPI_COMM_WORLD
+    );
+
+    if (w_rank == 0) {
+        int sum = 0; for (int i = 0; i < 255; ++i) sum += all_hist[i];
+        std::cout << "YUV hist sum: " << sum << std::endl;
+    }
+
+    // compute global min & d for histogram eq
     int i = 0;
     int min = 0;
     while (min == 0) min = all_hist[i++];
     int d = full_height * img_in.w - min;
-    histogram_equalization(y_equ,yuv_med.img_y,hist,yuv_med.h * yuv_med.w, 256, min, d);
+
+    histogram_equalization(y_equ,yuv_med.img_y,all_hist,yuv_med.h * yuv_med.w, 256, min, d);
 
     free(yuv_med.img_y);
     yuv_med.img_y = y_equ;
@@ -103,12 +129,13 @@ PPM_IMG contrast_enhancement_c_hsl(PPM_IMG img_in, int full_height)
 
     HSL_IMG hsl_med;
     PPM_IMG result;
+    unsigned char * l_equ;
 
     int hist[256];  // local histogram
     int all_hist[256];  // global histogram
 
     hsl_med = rgb2hsl(img_in);
-    unsigned char * l_equ = (unsigned char *)malloc(hsl_med.height*hsl_med.width*sizeof(unsigned char));
+    l_equ = (unsigned char *)malloc(hsl_med.height*hsl_med.width*sizeof(unsigned char));
 
     // compute local histogram
     int rows = (hsl_med.height - 2);
@@ -132,21 +159,13 @@ PPM_IMG contrast_enhancement_c_hsl(PPM_IMG img_in, int full_height)
         MPI_COMM_WORLD
     );
 
-    // if (w_rank == 0) {
-    //     int sum = 0; for (int i = 0; i < 255; ++i) sum += all_hist[i];
-    //     std::cout << "hist sum: " << sum << std::endl;
-    // }
-
     // compute global min & d for histogram eq
     int i = 0;
     int min = 0;
     while (min == 0) min = all_hist[i++];
     int d = full_height * img_in.w - min;
-    // if (w_rank == 0) std::cout << "min: " << min << "; d: " << d << std::endl;
-    histogram_equalization(l_equ, hsl_med.l,all_hist,hsl_med.width*hsl_med.height, 256, min, d);
 
-    // long sum = 0; for (int i = 0; i < hsl_med.width*hsl_med.height; ++i) sum += l_equ[i];
-    // std::cout << "P" << w_rank << " l_equ sum: " << sum << std::endl;
+    histogram_equalization(l_equ, hsl_med.l,all_hist,hsl_med.width*hsl_med.height, 256, min, d);
 
     free(hsl_med.l);
     hsl_med.l = l_equ;

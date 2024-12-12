@@ -184,6 +184,9 @@ void run_cpu_color_test(PPM_IMG img_in, int full_h)
         tstart = MPI_Wtime();
     }
 
+
+    /* HSL */
+
     PPM_IMG img_obuf_hsl = contrast_enhancement_c_hsl(img_in, full_h);
 
     // join the image back
@@ -213,8 +216,6 @@ void run_cpu_color_test(PPM_IMG img_in, int full_h)
         // update displacement
         disp += (rows * img_obuf_hsl.w);
     }
-
-    // std::cout << "Task " << w_rank << " sends: [" << displacements[w_rank] << ", " << displacements[w_rank] + counts[w_rank] - 1 << "] (" << counts[w_rank] << " elements, " << counts[w_rank] / img_obuf_hsl.w << "/" << full_h << " rows)\n";
 
     // gather R channel
     MPI_Gatherv(
@@ -271,20 +272,69 @@ void run_cpu_color_test(PPM_IMG img_in, int full_h)
         printf("HSL Processing time: %f (ms)\n", totalTime);
 
         write_ppm(img_obuf_hsl, "out_hsl.ppm");
-
-        // long sum = 0; for (int i = 0; i < img_obuf_hsl.w * full_h; ++i) sum += img_obuf_hsl.img_r[i];
-        // std::cout << "r sum: " << sum << std::endl;
-        // sum = 0; for (int i = 0; i < img_obuf_hsl.w * full_h; ++i) sum += img_obuf_hsl.img_g[i];
-        // std::cout << "g sum: " << sum << std::endl;
-        // sum = 0; for (int i = 0; i < img_obuf_hsl.w * full_h; ++i) sum += img_obuf_hsl.img_b[i];
-        // std::cout << "b sum: " << sum << std::endl;
     }
 
 
-    // PPM_IMG img_obuf_yuv = contrast_enhancement_c_yuv(img_in, full_height);
-    // printf("YUV processing time: %f (ms)\n", 0.0f /* TIMER */);
-    //
-    // write_ppm(img_obuf_yuv, "out_yuv.ppm");
+    /* YUV */
+
+    PPM_IMG img_obuf_yuv = contrast_enhancement_c_yuv(img_in, full_h);
+
+    // gather R channel
+    MPI_Gatherv(
+        w_rank == 0 ? img_obuf_yuv.img_r : img_obuf_yuv.img_r + img_obuf_yuv.w,
+        counts[w_rank],
+        MPI_UNSIGNED_CHAR,
+        rcv_img_obuf_r.data(),
+        counts.data(),
+        displacements.data(),
+        MPI_UNSIGNED_CHAR,
+        0,
+        MPI_COMM_WORLD
+    );
+
+    if (w_rank == 0) img_obuf_yuv.img_r = rcv_img_obuf_r.data();
+
+    // gather G channel
+    MPI_Gatherv(
+        w_rank == 0 ? img_obuf_yuv.img_g : img_obuf_yuv.img_g + img_obuf_yuv.w,
+        counts[w_rank],
+        MPI_UNSIGNED_CHAR,
+        rcv_img_obuf_g.data(),
+        counts.data(),
+        displacements.data(),
+        MPI_UNSIGNED_CHAR,
+        0,
+        MPI_COMM_WORLD
+    );
+
+    if (w_rank == 0) img_obuf_yuv.img_g = rcv_img_obuf_g.data();
+
+    // gather B channel
+    MPI_Gatherv(
+        w_rank == 0 ? img_obuf_yuv.img_b : img_obuf_yuv.img_b + img_obuf_yuv.w,
+        counts[w_rank],
+        MPI_UNSIGNED_CHAR,
+        rcv_img_obuf_b.data(),
+        counts.data(),
+        displacements.data(),
+        MPI_UNSIGNED_CHAR,
+        0,
+        MPI_COMM_WORLD
+    );
+
+    if (w_rank == 0) img_obuf_yuv.img_b = rcv_img_obuf_b.data();
+
+
+    if (w_rank == 0) {
+        double tfinish = MPI_Wtime();
+        double totalTime = tfinish - tstart;
+
+        img_obuf_yuv.h = full_h;
+
+        printf("YUV Processing time: %f (ms)\n", totalTime);
+
+        write_ppm(img_obuf_yuv, "out_yuv.ppm");
+    }
 
 }
 
