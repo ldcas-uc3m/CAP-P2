@@ -15,8 +15,8 @@ int main(){
 
     /* mpi */
 
-    int w_size;  // number of total task
-    int w_rank;  // task ID
+    int w_size;  // number of total processes
+    int w_rank;  // process ID
 
     MPI_Init(NULL, NULL);
     MPI_Comm_size(MPI_COMM_WORLD, &w_size);
@@ -65,7 +65,7 @@ int main(){
         disp += (rows - 2) * width;  // -2 bc of overlapping rows
     }
 
-    std::cout << "Task " << w_rank << " computes: [" << displacements[w_rank] << ", " << displacements[w_rank] + counts[w_rank] - 1 << "] (" << counts[w_rank] << " elements, " << counts[w_rank] / width << "/" << height << " rows)\n";
+    std::cout << "Process " << w_rank << " computes: [" << displacements[w_rank] << ", " << displacements[w_rank] + counts[w_rank] - 1 << "] (" << counts[w_rank] << " elements, " << counts[w_rank] / width << "/" << height << " rows)\n";
 
     {  // trust me bro, this is HIGHLY EFFICIENT C++ code
         std::vector<unsigned char> rcv_buf_g {};
@@ -171,8 +171,8 @@ int main(){
 
 void run_cpu_color_test(PPM_IMG img_in, int full_h)
 {
-    int w_size;  // number of total tasks
-    int w_rank;  // task ID
+    int w_size;  // number of total processes
+    int w_rank;  // process ID
 
     MPI_Comm_size(MPI_COMM_WORLD, &w_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &w_rank);
@@ -200,8 +200,8 @@ void run_cpu_color_test(PPM_IMG img_in, int full_h)
     std::vector<unsigned char> rcv_img_obuf_b {};
     rcv_img_obuf_b.reserve(img_obuf_hsl.w * full_h);
 
-    std::vector<int> counts {};  // number of elements to send to each task
-    std::vector<int> displacements {};  // displacements for each task
+    std::vector<int> counts {};  // number of elements to send to each process
+    std::vector<int> displacements {};  // displacements for each process
 
     int disp = 0;
     for (int i = 0; i < w_size; ++i) {
@@ -269,7 +269,7 @@ void run_cpu_color_test(PPM_IMG img_in, int full_h)
 
         img_obuf_hsl.h = full_h;
 
-        printf("HSL Processing time: %f (ms)\n", totalTime);
+        printf("HSL Processing time: %f s\n", totalTime);
 
         write_ppm(img_obuf_hsl, "out_hsl.ppm");
     }
@@ -331,7 +331,7 @@ void run_cpu_color_test(PPM_IMG img_in, int full_h)
 
         img_obuf_yuv.h = full_h;
 
-        printf("YUV Processing time: %f (ms)\n", totalTime);
+        printf("YUV Processing time: %f s\n", totalTime);
 
         write_ppm(img_obuf_yuv, "out_yuv.ppm");
     }
@@ -343,8 +343,8 @@ void run_cpu_color_test(PPM_IMG img_in, int full_h)
 
 void run_cpu_gray_test(PGM_IMG img_in, int full_h)
 {
-    int w_size;  // number of total tasks
-    int w_rank;  // task ID
+    int w_size;  // number of total processes
+    int w_rank;  // process ID
 
     MPI_Comm_size(MPI_COMM_WORLD, &w_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &w_rank);
@@ -364,8 +364,8 @@ void run_cpu_gray_test(PGM_IMG img_in, int full_h)
     std::vector<unsigned char> rcv_img_obuf {};
     rcv_img_obuf.reserve(img_obuf.w * full_h);
 
-    std::vector<int> counts {};  // number of elements to send to each task
-    std::vector<int> displacements {};  // displacements for each task
+    std::vector<int> counts {};  // number of elements to send to each process
+    std::vector<int> displacements {};  // displacements for each process
 
     int disp = 0;
     for (int i = 0; i < w_size; ++i) {
@@ -380,8 +380,6 @@ void run_cpu_gray_test(PGM_IMG img_in, int full_h)
         // update displacement
         disp += (rows * img_obuf.w);
     }
-
-    // std::cout << "Task " << w_rank << " sends: [" << displacements[w_rank] << ", " << displacements[w_rank] + counts[w_rank] - 1 << "] (" << counts[w_rank] << " elements, " << counts[w_rank] / img_obuf.w << "/" << full_h << " rows)\n";
 
     MPI_Gatherv(
         w_rank == 0 ? img_obuf.img : img_obuf.img + img_obuf.w,  // starting place: if != 0, we have to start one row below
@@ -403,7 +401,7 @@ void run_cpu_gray_test(PGM_IMG img_in, int full_h)
         img_obuf.h = full_h;
         img_obuf.img = rcv_img_obuf.data();
 
-        printf("Processing time: %f (ms)\n", totalTime);
+        printf("Processing time: %f s\n", totalTime);
 
         write_pgm(img_obuf, "out.pgm");
     }
