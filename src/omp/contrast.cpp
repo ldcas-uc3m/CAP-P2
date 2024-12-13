@@ -107,6 +107,9 @@ PPM_IMG read_ppm(const char * path){
     fread(ibuf,sizeof(unsigned char), 3 * result.w*result.h, in_file);
 
     #pragma omp parallel for simd
+    /* Este pragma combina la paralelización en múltiples hilos con la vectorización SIMD (Single Instruction, Multiple Data) para optimizar la copia de datos RGB desde `img` a `obuf`.
+        - `#pragma omp parallel for simd`permite que el compilador genere código que aproveche tanto la paralelización a nivel de hilo como la vectorización a nivel de instrucciones, mejorando el rendimiento.
+    Cada iteración del bucle copia tres componentes RGB consecutivos de la imagen a `obuf`, lo que es completamente independiente y seguro para paralelización.*/
     for(i = 0; i < result.w*result.h; i ++){
         result.img_r[i] = ibuf[3*i + 0];
         result.img_g[i] = ibuf[3*i + 1];
@@ -125,6 +128,8 @@ void write_ppm(PPM_IMG img, const char * path){
     char * obuf = (char *)malloc(3 * img.w * img.h * sizeof(char));
 
     #pragma omp parallel for simd
+    /*En este caso se ha utilizado la misma paralelizacion y logica que en el caso anterior. Debido al uso unicamente de vectores,
+    se ha optado por el uso de simd de nuevo*/
     for(i = 0; i < img.w*img.h; i ++){
         obuf[3*i + 0] = img.img_r[i];
         obuf[3*i + 1] = img.img_g[i];
