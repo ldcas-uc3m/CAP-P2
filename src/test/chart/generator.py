@@ -195,6 +195,38 @@ def get_deterministic_color_speedup(index: int):
     return color_list[index-1 % (len(color_list))]  # Cicla a través de la lista si hay más claves que colores
 
 
+# Plot and show real speed-up versus gustafson metrics chart
+# sequential -> Map consisting of relation between number of processes and array of multiple tries
+# parallel -> Map consisting of relation between number of processes and array of multiple tries
+# parallel_name -> MPI or OpenMPI
+# convertion_name -> HSL or YUV
+def gustafson_chart(sequential: dict, parallel: dict, parallel_name: str, convertion_name: str):
+
+    processes = list(sequential.keys())  # sequential or parallel is valid
+
+    seq_means = [np.mean(values) for values in sequential.values()]
+    par_means = [np.mean(values) for values in parallel.values()]
+    speed_up = [seq / par for seq, par in list(zip(seq_means, par_means))]
+    alphas = [(n_process - sp) / (n_process - 1) for n_process, sp in zip(processes[1:], speed_up[1:])]
+    alpha_avg = np.mean(alphas)
+    gustafson = [n_process - alpha_avg * (n_process - 1) for n_process in processes]
+
+    plt.figure(figsize=(10, 5))
+    for x, y in zip(processes, speed_up):
+        plt.text(x, y, f'{y:.3f}', fontsize=10, ha='center', va='bottom', color='black')
+    plt.plot(processes, speed_up, marker='o', color='orange', label="Speed-Up empírico")
+    plt.plot(processes, gustafson, marker='o', linestyle='--', color='blue', label="Gustafson")
+    plt.xlabel("Número de procesos")
+    plt.ylabel("Aceleración")
+    plt.title(f"{parallel_name}, {convertion_name}: Aceleración teórica (Gustafson) vs aceleración empírica")
+    plt.grid(True)
+    plt.legend()
+    formatter = FuncFormatter(lambda x, _: f'{x:.3f}')  # Four decimals on axis Y chart
+    plt.gca().yaxis.set_major_formatter(formatter)
+    plt.gca().yaxis.set_major_locator(MultipleLocator(0.50))
+    plt.show()
+
+
 # Process user's input
 # Accepted format: S 1 0.5 0.4 0.6 where S indicates sequential, first number the key and the others the values
 def process_input():
@@ -365,7 +397,7 @@ def main():
     print("Los datos de entrada son válidos, generando gráficas...")
     execution_chart_v3(sequential, parallel, parallel_name, convertion_name) # Relaxed to allow more diverse inputs
     speed_up_chart_v3(sequential, parallel, parallel_name, convertion_name) # Relaxed to allow more diverse inputs
-
+    gustafson_chart(sequential, parallel, parallel_name, convertion_name)
 
 if __name__ == "__main__":
     main()
