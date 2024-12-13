@@ -1,16 +1,16 @@
 \subsection{Métricas}
 En esta sección, se incluyen las métricas obtenidas durante la ejecución del programa con paralelismo \textbf{OpenMP}. Quedan recogidas representaciones gráficas, agrupados dos a dos (HSL y YUV para color y grises), un tipo de representación expone una comparativa con la ejecución secuencial en términos de tiempo, otra en términos de aceleración y una tercera recoge una equiparación del \textit{speed-up} empírico versus la \textbf{ley de Gustafson}. Se dispone de un análisis posterior de las mismas, con el objetivo de definir conclusiones que demuestren qué tan buen rendimiento puede llegar a obtener OpenMP con la optimización implementada.
-\rasterfigure[0.8]{hslopenmp1}{Comparativa de tiempos de ejecución HSL.}
-\rasterfigure[0.8]{hslopenmp2}{Aceleración empírica del programa OpenMP procesando HSL respecto al programa secuencial.\textsuperscript{\ref{note:speedup}}}
+\svgfigure[0.8]{hslopenmp1}{Comparativa de tiempos de ejecución HSL.}
+\svgfigure[0.8]{hslopenmp2}{Aceleración empírica del programa OpenMP procesando HSL respecto al programa secuencial.\textsuperscript{\ref{note:speedup}}}
 \footnote{\label{note:speedup}La fórmula utilizada para medir el \textit{speed-up} experimental es 
 $\text{Speed-up} = \frac{T_{s_n}}{T_{p_n}}$, donde $T_{s_n}$ es el tiempo secuencial medido con $n$ procesos y $T_{p_n}$ es el tiempo medido del programa paralelo con OpenMP utilizando $n$ hilos. Esto genera un margen de error asumible que podría ser solventado con la Ley de Amdahl.}
 
-\rasterfigure[1]{yuvopenmp1}{Comparativa de tiempos de ejecución YUV.}
-\rasterfigure[1]{yuvopenmp2}{Aceleración empírica del programa OpenMP procesando YUV respecto al programa secuencial.}
+\svgfigure[1]{yuvopenmp1}{Comparativa de tiempos de ejecución YUV.}
+\svgfigure[1]{yuvopenmp2}{Aceleración empírica del programa OpenMP procesando YUV respecto al programa secuencial.}
 
 \newpage
-\rasterfigure[1]{grisesopenmp1}{Comparativa de tiempos de ejecución de la escala de grises.}
-\rasterfigure[1]{grisesopenmp2}{Aceleración empírica del programa OpenMP procesando la escala de grises respecto al programa secuencial.}
+\svgfigure[1]{grisesopenmp1}{Comparativa de tiempos de ejecución de la escala de grises.}
+\svgfigure[1]{grisesopenmp2}{Aceleración empírica del programa OpenMP procesando la escala de grises respecto al programa secuencial.}
 
 Como puede apreciarse, las métricas y visualizaciones anteriores muestran un patrón consistente para el procesamiento de color y escala de grises. La paralelización con OpenMP resulta en mejoras significativas en el rendimiento, especialmente en los primeros incrementos de hilos, pero el impacto disminuye gradualmente debido a factores inherentes al paralelismo como \textit{overheads}, sincronización y porciones no paralelizables del código. La aceleración o \textit{speed-up} conseguido demuestra un uso eficiente de recursos hasta límites prácticos impuestos por la arquitectura y la naturaleza del problema.
 \newpage
@@ -26,12 +26,12 @@ El factor \textit{alpha} queda indicado como la fracción del código que es sec
 
 Posteriormente, realizando la media de las fracciones obtenidas por N procesos, se define un valor para cada caso:
 
-\rasterfigure[.3]{alphaopenmp}{Fracciones obtenidas para cada caso.}
+\svgfigure[.3]{alphaopenmp}{Fracciones obtenidas para cada caso.}
 
 Finalmente, se incluyen las distintas visualizaciones mencionadas. En general, la \figref{yuvopenmp3}, la \figref{hslopenmp3} y la \figref{grisesopenmp3} muestran respectivamente un patrón común: la aceleración teórica siempre supera a la empírica, lo que refleja las limitaciones del paralelismo en un entorno práctico. Los tres casos sugieren que el sistema experimenta una saturación o una reducción en el paralelismo, posiblemente debido a problemas de sincronización o una carga de trabajo mal distribuida. 
 
 Entrando más en detalle, la discrepancia más notoria se encuentra en el procesado YUV, que enfrenta mayores desafíos de escalabilidad y complejidad, mientras que HSL logra un mejor rendimiento en configuraciones con mayor número de procesos. Esto resalta la importancia de optimizar tanto el software como el hardware para minimizar estos factores y cerrar la brecha entre la teoría y la práctica.
 
-\rasterfigure[.8]{yuvopenmp3}{Aceleración empírica del programa OpenMP procesando YUV respecto al cálculo teórico de Gustafson.}
-\rasterfigure[.8]{hslopenmp3}{Aceleración empírica del programa OpenMP procesando YUV respecto al cálculo teórico de Gustafson.}
-\rasterfigure[.8]{grisesopenmp3}{Aceleración empírica del programa OpenMP procesando YUV respecto al cálculo teórico de Gustafson.}
+\svgfigure[.8]{yuvopenmp3}{Aceleración empírica del programa OpenMP procesando YUV respecto al cálculo teórico de Gustafson.}
+\svgfigure[.8]{hslopenmp3}{Aceleración empírica del programa OpenMP procesando YUV respecto al cálculo teórico de Gustafson.}
+\svgfigure[.8]{grisesopenmp3}{Aceleración empírica del programa OpenMP procesando YUV respecto al cálculo teórico de Gustafson.}
