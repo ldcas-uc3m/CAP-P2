@@ -16,4 +16,4 @@ MPI
 grey
 
 
-MPI (mode, processes, grey1)
+MPI (mode, nodes, processes, grey1)

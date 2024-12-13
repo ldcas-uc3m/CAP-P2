@@ -16,4 +16,4 @@ MPI
 YUV 
 
 
-MPI (mode, processes, YUV1)
+MPI (mode, nodes, processes, YUV1)
