@@ -107,6 +107,10 @@ HSL_IMG rgb2hsl(PPM_IMG img_in)
     float var_r, var_g, var_b, var_min, var_max, del_max;
 
     #pragma omp parallel for private(var_r, var_g, var_b, var_max, var_min, del_max, H, S, L) shared(img_in, img_out)
+    /* paralelizacion del bucle `for` el cual realiza la conversión de cada píxel de un espacio de color RGB a HSL. Para ello usamos:
+        - `private(...)`: Declara variables locales al hilo, asegurando que cada hilo tenga su copia independiente para evitar condiciones de carrera.
+        - `shared(...)`: Especifica que las estructuras de entrada (`img_in`) y salida (`img_out`) son compartidas entre los hilos, permitiendo acceso concurrente para lectura/escritura.
+      De esta forma, los hilos no modifican la misma variable a la vez, asegurando así una paralelizacion segura*/
     for(i = 0; i < img_in.w*img_in.h; i ++){
 
         var_r = ( (float)img_in.img_r[i]/255 );//Convert RGB to [0,1]
@@ -186,6 +190,10 @@ PPM_IMG hsl2rgb(HSL_IMG img_in)
 
     
     #pragma omp parallel for shared(img_in, result)
+    /*Paralelizacion del bucle for usando:
+        - `shared(img_in, result)`: Las estructuras de entrada (`img_in`) y salida (`result`) son compartidas entre los hilos, ya que cada hilo accede a diferentes elementos de estas estructuras.
+     Cada iteración del bucle es independiente, lo que asegura que la paralelización sea segura. El trabajo de cada hilo se limita a transformar los valores de un único píxel, evitando condiciones de carrera.
+    */
     for(i = 0; i < img_in.width*img_in.height; i ++){
         float H = img_in.h[i];
         float S = img_in.s[i];
@@ -237,6 +245,10 @@ YUV_IMG rgb2yuv(PPM_IMG img_in)
 
     
     #pragma omp parallel for private(r,g,b,y,cb,cr)
+    /*Al igual que en casos anteriores, se hace uso de private, para las variables que se encuentran
+    entre parentesis. Esto se hace para que esas variables sean diferentes para cada hilo y no las actualicen
+    al mismo tiempo, lo cual podria suponer un problema al actualizar el valor de una mientras se utiliza en
+    otro hilo*/
     for(i = 0; i < img_out.w*img_out.h; i ++){
         r = img_in.img_r[i];
         g = img_in.img_g[i];
@@ -281,6 +293,9 @@ PPM_IMG yuv2rgb(YUV_IMG img_in)
 
     
     #pragma omp parallel for private(y,cb,cr,rt,gt,bt) schedule(static)
+    /*Para este caso, usamos de nuevo private por las mismas razones ya mencionadas, pero añadimos un
+    schedule static, esto se ha realizado con la intencion de dividir de manera equitativa la ejecuciones del 
+    bucle para cada hilo.*/
     for(i = 0; i < img_out.w*img_out.h; i ++){
         y  = (int)img_in.img_y[i];
         cb = (int)img_in.img_u[i] - 128;
