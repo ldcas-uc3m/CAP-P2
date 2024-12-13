@@ -1,0 +1,53 @@
+\section{Compilación y ejecución}
+
+
+\subsection*{Compilación}
+Para compilar este programa es necesario tener instalado en el sistema las siguientes dependencias:
+\begin{itemize}
+  \item OpenMP\footurl{https://www.openmp.org/}
+  \item MPICH\footurl{https://www.mpich.org/}
+  \item CMake\footurl{https://cmake.org/}
+  \item GNU Make\footurl{https://www.gnu.org/software/make/}, o similar
+\end{itemize}
+
+
+\noindent
+Es necesario ejecutar los siguientes comandos desde la raíz del repositorio para realizar la compilación:
+\begin{verbatim}
+  mkdir build
+  cd build/
+  cmake .. -DCMAKE_CXX_COMPILER=mpicxx.mpich
+  make
+\end{verbatim}
+
+\noindent
+Ésto generará cuatro ejecutables, correspondientes a las cuatro versiones del \textit{software}:
+\begin{itemize}
+  \item \texttt{contrast} -- versión original, secuencial
+  \item \texttt{contrast-omp} -- versión paralelizada con OpenMP
+  \item \texttt{contrast-mpi} -- versión paralelizada con MPI
+  \item \texttt{contrast-mpi-omp} -- versión paralelizada de forma híbrida, con OpenMP y MPI
+\end{itemize}
+
+
+
+\subsection*{Ejecución}
+
+Lo primero, es necesario convertir la imagen de entrada a los formatos PGM (\texttt{in.pgm}) y PPM (\texttt{in.ppm}). Ésto se puede realizar, por ejemplo, mediante el uso de la herramienta de línea de comandos Convert\footurl{https://imagemagick.org/script/convert.php}, y dejarla en el mismo directorio que el ejecutable, en nuestro caso, el directorio \texttt{build/}.
+
+\noindent
+Por ejemplo:
+\begin{verbatim}
+  convert highres.jpg build/in.pgm
+  convert highres.jpg build/in.ppm
+\end{verbatim}
+
+
+Las distintas versiones pueden ser ejecutadas en un sistema de colas como Slurm\footurl{https://slurm.schedmd.com/documentation.html}, de la siguiente forma:
+\begin{verbatim}
+  srun -N <nodos> -n <procesos> <ejecutable>
+\end{verbatim}
+
+Especificando el número de nodos a usar y el número de procesos. Para la versión secuencial y la de OpenMP, estos números serán ambos $1$, ya que ambas ejecutan un único proceso.
+
+Para la versión OpenMP y la híbrida, además se podrá especificar el número de \textit{threads} de ejecución mediante la variable de entorno \texttt{OMP\_NUM\_THREADS=<threads>}.
