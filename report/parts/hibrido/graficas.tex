@@ -3,10 +3,10 @@
 En esta sección, se incluyen las métricas obtenidas durante la ejecución del programa con paralelismo \textbf{OpenMP+MPI}. 
 Quedan recogidas representaciones gráficas, tanto para HSL y YUV (color) como greyscale (tonos de gris, o blanco y negro).
 Un tipo de representación expone una comparativa de la ejecución paralela con la ejecución secuencial en términos de tiempo y otra en términos de aceleración. 
-%Se dispone de un análisis posterior de las mismas, con el objetivo de definir conclusiones que demuestren qué tan buen rendimiento puede llegar a obtener OpenMP+MPI con la optimización implementada.
 Cada conjunto de datos formando una línea representa un grupo de pruebas con el mismo número de nodos y procesos asignados, diferenciados por el número de hilos asignados.
+Se dispone de un análisis posterior de las mismas, con el objetivo de extraer conclusiones que demuestren qué tan buen rendimiento puede llegar a obtener OpenMP+MPI con la optimización implementada.
 
-Las fórmulas utilizadas para calcular el speedup y la ley Gustafson son las mismas definidas en la sección de \ref{Métricas de OpenMP}{Métricas de OpenMP}
+La fórmula utilizada para calcular el speedup es la misma definida en la sección de \ref{Métricas de OpenMP}{Métricas de OpenMP}
 
 \svgfigure[0.8]{seq vs omp+mpi - HSL}{Comparativa de tiempos de ejecución HSL.}
 \svgfigure[0.8]{seq vs omp+mpi - HSL speedup}{Aceleración empírica del programa OpenMP+MPI procesando HSL respecto al programa secuencial.\textsuperscript{\ref{note:speedup}}}
@@ -18,6 +18,14 @@ Las fórmulas utilizadas para calcular el speedup y la ley Gustafson son las mis
 \svgfigure[1]{seq vs omp+mpi - grey}{Comparativa de tiempos de ejecución de la escala de grises.}
 \svgfigure[1]{seq vs omp+mpi - grey speedup}{Aceleración empírica del programa OpenMP+MPI procesando escala de grises respecto al programa secuencial.}
 
-Como puede apreciarse, las métricas y visualizaciones anteriores muestran un patrón consistente para el procesamiento de color y escala de grises. 
-La paralelización con OpenMP resulta en mejoras significativas en el rendimiento, especialmente en los primeros incrementos de hilos, pero el impacto disminuye gradualmente debido a factores inherentes al paralelismo como \textit{overheads}, sincronización y porciones no paralelizables del código. La aceleración o \textit{speed-up} conseguido demuestra un uso eficiente de recursos hasta límites prácticos impuestos por la arquitectura y la naturaleza del problema.
+Como puede apreciarse, las métricas y visualizaciones anteriores muestran un patrón consistente para el procesamiento de color y grises. 
+De forma breve, los resultados con un sólo nodo dan mejores resultados que con más nodos, probablemente por porblemas de sincronización. 
+Además, un incremento de procesos o hilos no necesariamente mejora la eficiencia, como se puede observar a continuación en las gráficas más coloridas. 
+Con esto en cuenta, la mejora en rendimiento es muy considerable, superior a OpenMP o MPI por individual.
+
+\svgfigure[1]{seq vs omp+mpi - grey speedup colour}{Aceleración empírica del programa OpenMP+MPI procesando escala de grises a color respecto al programa secuencial.}
+\svgfigure[1]{seq vs omp+mpi - HSL speedup colour}{Aceleración empírica del programa OpenMP+MPI procesando HSL a color respecto al programa secuencial.}
+\svgfigure[1]{seq vs omp+mpi - YUV speedup colour}{Aceleración empírica del programa OpenMP+MPI procesando YUV a color respecto al programa secuencial.}
+
+
 \newpage
