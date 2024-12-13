@@ -3,7 +3,6 @@
 
 Como ya hemos mencionado anteriormente, la metodología de paralelización se puede abstraer en cuatro fases principales.
 
-En MPI, se generan un número de procesos repartidos en una serie de nodos.
 Para la implementación con MPI, en la fase de \textbf{descomposición} se divide la imagen de entrada (de ancho $w$ y altura $h$) entre el número total de procesos $n$\footnote{El primer proceso será el proceso $p_0$ y el último será el proceso $p_{n-1}$. El proceso $p_0$ será considerado también como proceso \textit{root}, o proceso orquestador.}. Éste proceso se realiza por filas, dado que el lenguaje de programación, C++, es \textit{row major}. Para cubrir el caso de que la imagen no se pueda dividir equitativamente en filas, el resto de filas $r = h \text{ mod } w$ se repartirán entre los $r$ primeros procesos.
 
 Para definir la \textbf{asignación} los elementos de cada \textit{chunk} usaremos el número de elementos del mismo, $C(p_i)$, y el desplazamiento, $D(p_i)$, entendido como el índice del primer elemento de la imagen que pertenece al mismo.
