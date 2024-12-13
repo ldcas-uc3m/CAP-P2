@@ -191,9 +191,10 @@ PPM_IMG hsl2rgb(HSL_IMG img_in)
     
     #pragma omp parallel for shared(img_in, result)
     /*Paralelizacion del bucle for usando:
-        - `shared(img_in, result)`: Las estructuras de entrada (`img_in`) y salida (`result`) son compartidas entre los hilos, ya que cada hilo accede a diferentes elementos de estas estructuras.
-     Cada iteración del bucle es independiente, lo que asegura que la paralelización sea segura. El trabajo de cada hilo se limita a transformar los valores de un único píxel, evitando condiciones de carrera.
-    */
+        - `shared(img_in, result)`: Las estructuras de entrada (`img_in`) y salida (`result`) son compartidas entre los hilos, ya que cada hilo accede a diferentes 
+           elementos de estas estructuras.
+     Cada iteración del bucle es independiente, lo que asegura que la paralelización sea segura. El trabajo de cada hilo se limita a transformar los valores de un único píxel, 
+     evitando condiciones de carrera.*/
     for(i = 0; i < img_in.width*img_in.height; i ++){
         float H = img_in.h[i];
         float S = img_in.s[i];
