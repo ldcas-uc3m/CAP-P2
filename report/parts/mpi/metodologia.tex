@@ -1,2 +1,56 @@
 \subsection{Metodología}
 % Incluir la metodología seguida para cada caso cambiado utilizando los steps del enunciado: descomposición, asignación, orquestación y reparto
+
+Como ya hemos mencionado anteriormente, la metodología de paralelización se puede abstraer en cuatro fases principales.
+
+En MPI, se generan un número de procesos repartidos en una serie de nodos.
+Para la implementación con MPI, en la fase de \textbf{descomposición} se divide la imagen de entrada (de ancho $w$ y altura $h$) entre el número total de procesos $n$\footnote{El primer proceso será el proceso $p_0$ y el último será el proceso $p_{n-1}$. El proceso $p_0$ será considerado también como proceso \textit{root}, o proceso orquestador.}. Éste proceso se realiza por filas, dado que el lenguaje de programación, C++, es \textit{row major}. Para cubrir el caso de que la imagen no se pueda dividir equitativamente en filas, el resto de filas $r = h \text{ mod } w$ se repartirán entre los $r$ primeros procesos.
+
+Para definir la \textbf{asignación} los elementos de cada \textit{chunk} usaremos el número de elementos del mismo, $C(p_i)$, y el desplazamiento, $D(p_i)$, entendido como el índice del primer elemento de la imagen que pertenece al mismo.
+Estos valores quedan definidos por las ecuaciones \ref{eq:count} y \ref{eq:displacement}.
+
+
+\begin{equation}\label{eq:count}
+  C(p_i) =
+  \begin{cases}
+    \lfloor h/w\rfloor + rw ,& \text{si } i = 0\\
+    \lfloor h/w\rfloor + rw,& \text{si } 0 < i \le r\\
+    \lfloor h/w\rfloor,& \text{si } i > r\
+  \end{cases}
+\end{equation}
+
+\begin{equation}\label{eq:displacement}
+  D(p_i) =
+  \begin{cases}
+    0,& \text{if } i = 0\\
+    D(p_{i-1}) + C(p_{i-1}) - w,& \text{si } i > 0
+  \end{cases}
+\end{equation}
+
+
+Dado que para calcular la ecualización del histograma de un píxel (elemento) es necesario conocer los valores de los píxeles que le rodean, a cada trozo (o \textit{chunk}) que se le asigne a cada proceso $p_i$ se le añadirán los elementos de la fila inmediatamente superior e inferior. En el caso de que no exista esa fila (el caso del primer y el último \textit{chunk}), esto no será necesario. Ésto genera un solapamiento que será obviado a la hora de generar la imagen final. El reparto inicial, por tanto, queda definido por la ecualización \ref{eq:count_}.
+
+\begin{equation}\label{eq:count_}
+  C'(p_i) =
+  \begin{cases}
+    \lfloor h/w\rfloor + (1+r) \cdot w ,& \text{si } i = 0\\
+    \lfloor h/w\rfloor + (2+r) \cdot w,& \text{si } 0 < i \le r\\
+    \lfloor h/w\rfloor + 2w,& \text{si } r < i < n - 1\\
+    \lfloor h/w\rfloor + w,& \text{si } i = n - 1\\
+  \end{cases}
+\end{equation}
+
+
+
+Para la \textbf{orquestación} y el \textbf{reparto} de los elementos se realizarán llamadas MPI. El proceso seguido para cada uno de los sub-procesos (escala de grises, color HSL y color YUV), es el siguiente:
+\begin{enumerate}
+  \item El proceso $p_0$ lee el fichero de entrada, y envía, mediante una llamada \texttt{MPI\_Bcast} el tamaño de la imagen al resto de procesos.
+  \item Todos los procesos calculan los distintos tamaños y desplazamientos iniciales ($C'(p)$ y $D(p$)).
+  \item Se realiza una llamada \texttt{MPI\_Scatterv} por canal para que el proceso $p_0$ envíe los datos correspondientes al resto de procesos, generando una sub-imagen en cada proceso.\footnote{Para el caso de las imágenes a color, en este punto también se transforma la sub-imagen de RGB a HSL/YUV.}
+  \item Cada proceso calcula su histograma parcial. En éste histograma no se tienen en cuenta las filas extras de solapamiento ($C(p)$ y $D(p$)).
+  \item Se realiza una llamada \texttt{MPI\_Allreduce} para generar el histograma de la imagen completa y repartirlo a todos los nodos.
+  \item Cada proceso realiza la ecualización de su sub-imagen. Es importante recalcar que para este cálculo se tiene en cuenta el histograma de la imagen completa.
+  \item Los procesos vuelven a computar los desplazamientos y tamaños, excluyendo en esta ocasión las filas extras de solapamiento ($C(p)$ y $D(p$)).
+  \item Se realiza una llamada \texttt{MPI\_Gatherv} por canal para generar la imagen final en el proceso $p_0$.
+  \item El proceso $p_0$ escribe el fichero de salida.
+\end{enumerate}

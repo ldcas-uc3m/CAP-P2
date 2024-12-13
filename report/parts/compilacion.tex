@@ -51,3 +51,5 @@ Las distintas versiones pueden ser ejecutadas en un sistema de colas como Slurm\
 Especificando el número de nodos a usar y el número de procesos. Para la versión secuencial y la de OpenMP, estos números serán ambos $1$, ya que ambas ejecutan un único proceso.
 
 Para la versión OpenMP y la híbrida, además se podrá especificar el número de \textit{threads} de ejecución mediante la variable de entorno \texttt{OMP\_NUM\_THREADS=<threads>}.
+
+Al ejecutar el programa, se generarán tres ficheros de salida, \texttt{out.pgm}, \texttt{out\_hsl.ppm} y \texttt{out\_yuv.ppm}, correspondientes a los tres sub-procesos de ecualización.
