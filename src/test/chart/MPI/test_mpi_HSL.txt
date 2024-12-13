@@ -16,4 +16,4 @@ MPI
 HSL 
 
 
-MPI (mode, processes, HSL1)
+MPI (mode, nodes, processes, HSL1)
