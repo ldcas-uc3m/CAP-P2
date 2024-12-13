@@ -1,2 +1,23 @@
 \subsection{Métricas}
 % Justificar y adjuntar las gráficas del modelo híbrido de OPENMP Y MPI, explicando resultados y gráficas
+En esta sección, se incluyen las métricas obtenidas durante la ejecución del programa con paralelismo \textbf{OpenMP+MPI}. 
+Quedan recogidas representaciones gráficas, tanto para HSL y YUV (color) como greyscale (tonos de gris, o blanco y negro).
+Un tipo de representación expone una comparativa de la ejecución paralela con la ejecución secuencial en términos de tiempo y otra en términos de aceleración. 
+%Se dispone de un análisis posterior de las mismas, con el objetivo de definir conclusiones que demuestren qué tan buen rendimiento puede llegar a obtener OpenMP+MPI con la optimización implementada.
+Cada conjunto de datos formando una línea representa un grupo de pruebas con el mismo número de nodos y procesos asignados, diferenciados por el número de hilos asignados.
+
+Las fórmulas utilizadas para calcular el speedup y la ley Gustafson son las mismas definidas en la sección de \ref{Métricas de OpenMP}{Métricas de OpenMP}
+
+\svgfigure[0.8]{seq vs omp+mpi - HSL}{Comparativa de tiempos de ejecución HSL.}
+\svgfigure[0.8]{seq vs omp+mpi - HSL speedup}{Aceleración empírica del programa OpenMP+MPI procesando HSL respecto al programa secuencial.\textsuperscript{\ref{note:speedup}}}
+
+\svgfigure[1]{seq vs omp+mpi - YUV}{Comparativa de tiempos de ejecución YUV.}
+\svgfigure[1]{seq vs omp+mpi - YUV speedup}{Aceleración empírica del programa OpenMP+MPI procesando YUV respecto al programa secuencial.}
+
+\newpage
+\svgfigure[1]{seq vs omp+mpi - grey}{Comparativa de tiempos de ejecución de la escala de grises.}
+\svgfigure[1]{seq vs omp+mpi - grey speedup}{Aceleración empírica del programa OpenMP+MPI procesando escala de grises respecto al programa secuencial.}
+
+Como puede apreciarse, las métricas y visualizaciones anteriores muestran un patrón consistente para el procesamiento de color y escala de grises. 
+La paralelización con OpenMP resulta en mejoras significativas en el rendimiento, especialmente en los primeros incrementos de hilos, pero el impacto disminuye gradualmente debido a factores inherentes al paralelismo como \textit{overheads}, sincronización y porciones no paralelizables del código. La aceleración o \textit{speed-up} conseguido demuestra un uso eficiente de recursos hasta límites prácticos impuestos por la arquitectura y la naturaleza del problema.
+\newpage

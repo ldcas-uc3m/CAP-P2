@@ -1,2 +1,35 @@
 \subsection{Métricas}
 % Justificar y adjuntar las gráficas de MPI, explicando resultados y gráficas
+En esta sección, se incluyen las métricas obtenidas durante la ejecución del programa con paralelismo \textbf{MPI}. Quedan recogidas representaciones gráficas, agrupados dos a dos (HSL y YUV para color y grises), un tipo de representación expone una comparativa con la ejecución secuencial en términos de tiempo, otra en términos de aceleración y una tercera recoge una equiparación del \textit{speed-up} empírico versus la \textbf{ley de Gustafson}. 
+Se dispone de un análisis posterior de las mismas, con el objetivo de definir conclusiones que demuestren qué tan buen rendimiento puede llegar a obtener MPI con la optimización implementada.
+
+Las fórmulas utilizadas para calcular el speedup y la ley Gustafson son las mismas definidas en la sección de \ref{Métricas de OpenMP}{Métricas de OpenMP}.
+
+\svgfigure[0.8]{seq vs mpi - HSL}{Comparativa de tiempos de ejecución HSL.}
+\svgfigure[0.8]{seq vs mpi - HSL speedup}{Aceleración empírica del programa MPI procesando HSL respecto al programa secuencial.\textsuperscript{\ref{note:speedup}}}
+
+\svgfigure[1]{seq vs mpi - YUV}{Comparativa de tiempos de ejecución YUV.}
+\svgfigure[1]{seq vs mpi - YUV speedup}{Aceleración empírica del programa MPI procesando YUV respecto al programa secuencial.}
+
+\newpage
+\svgfigure[1]{seq vs mpi - grey}{Comparativa de tiempos de ejecución de la escala de grises.}
+\svgfigure[1]{seq vs mpi - grey speedup}{Aceleración empírica del programa MPI procesando la escala de grises respecto al programa secuencial.}
+
+Como puede apreciarse, las métricas y visualizaciones anteriores muestran un patrón consistente para el procesamiento de color y escala de grises. 
+La paralelización con MPI resulta en mejoras significativas en el rendimiento, especialmente en los primeros incrementos de hilos, pero el impacto disminuye gradualmente debido a factores inherentes al paralelismo como \textit{overheads}, sincronización y porciones no paralelizables del código. 
+Este mismo overhead causa que el resultado obtenido usando más de un nodo en la escala de grises resulte en una \textbf{pérdida} de eficiencia (speedup inferior a 1) para más de un (1) nodo.
+La aceleración o \textit{speed-up} conseguido, ya sea mediante el uso de más procesos en escala de grises o mediante el uso de más nodos y procesos, demuestra la posibilidad de mejorar eficiencia a la hora de resolver el problema, hasta límites prácticos impuestos por la arquitectura y la naturaleza del problema.
+
+\newpage
+A continuación, se recoge una comparación de la aceleración empírica respecto a la \textbf{ley de Gustafson} para cada caso anterior, calculando la alfa para cada conjunto y a continuación mostrando el speedup acorde a ambas medidas.
+En general, la \figref{seq vs mpi - YUV speedup gustafson}, la \figref{seq vs mpi - HSL speedup gustafson} y la \figref{seq vs mpi - grey speedup gustafson} muestran un patrón común: la aceleración teórica supera a la empírica, lo que refleja las limitaciones del paralelismo en un entorno práctico. 
+Los tres casos sugieren que el sistema experimenta una saturación o una reducción en el paralelismo alrededor de los 4-8 procesos, potencialmente debido a problemas de sincronización o una carga de trabajo mal distribuida. 
+Los problemas de sincronización son uno de los principales problemas a la hora de paralelizar, puesto que el tiempo usado en comunicarse y sincronizar limita el tiempo máximo paralelizable.
+
+Cómo se había comentado previamente, el principal caso llamativo es la escala de grises, ya que puesto a que pierde eficiencia respecto al modelo secuencial, la ley de gustafson prevee una pérdida de eficiencia mayor que el estancamiento real. 
+Esto resalta la importancia de evaluar la eficiencia tras paralelizar, para compribar que la implementación realizada sea de verdad una mejora. 
+Resalta también como no todas las tareas mejoran mediante paralelización.
+
+\svgfigure[.8]{seq vs mpi - YUV speedup gustafson}{Aceleración empírica del programa MPI procesando YUV respecto al cálculo teórico de Gustafson.}
+\svgfigure[.8]{seq vs mpi - HSL speedup gustafson}{Aceleración empírica del programa MPI procesando HSL respecto al cálculo teórico de Gustafson.}
+\svgfigure[.8]{seq vs mpi - grey speedup gustafson}{Aceleración empírica del programa MPI procesando escala de grises respecto al cálculo teórico de Gustafson.}
