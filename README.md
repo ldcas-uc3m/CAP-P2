@@ -88,6 +88,8 @@ Para ejecutar:
 srun -p gpus -N <nodos> -n <cores> <ejecutable>
 ```
 
+En el caso de versiones con OMP, es necesario usar la variable de entorno `OMP_NUM_THREADS=<threads>` para especificar el número de _threads_.
+
 
 
 
